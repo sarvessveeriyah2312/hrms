@@ -1,0 +1,8 @@
+# Local development profile. `./gradlew bootRun` (and `npm run dev:api`) turn it on.
+hrms:
+  auth:
+    cookie-secure: false   # the web app runs on http://localhost
+  seed:
+    enabled: true
+    # Password for the demo users. Local only; never reuse it anywhere real.
+    password: ${HRMS_SEED_PASSWORD:hrms-demo-123}

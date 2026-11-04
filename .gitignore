@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.expo/
+.turbo/
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+# Firebase / Google credentials must never be committed
+*service-account*.json
+google-services.json
+GoogleService-Info.plist
+# backend
+backend/.gradle/
+backend/build/

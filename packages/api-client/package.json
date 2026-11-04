@@ -1,0 +1,11 @@
+{
+  "name": "@hrms/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Typed client for the HRMS REST API (/api/v1). Replace hand-written types with OpenAPI-generated ones once the API stabilises.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

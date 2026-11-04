@@ -1,0 +1,94 @@
+/* Leave calendar and planner */
+.lc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.lc-layout--planner { grid-template-columns: minmax(0, 1fr) 380px; }
+@media (max-width: 1100px) { .lc-layout, .lc-layout--planner { grid-template-columns: minmax(0, 1fr); } }
+
+.lc-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 4px 16px 10px; }
+.lc-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--color-text-secondary); }
+.lc-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.lc-swatch { width: 14px; height: 10px; border-radius: 3px; }
+.lc-swatch--approved { background: #2F7FF0; }
+.lc-swatch--pending { background: repeating-linear-gradient(135deg, #2F7FF0 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px #2F7FF0; }
+.lc-swatch--draft { border: 1.5px dashed var(--color-text-muted); }
+.lc-swatch--holiday { background: #7A5AF0; }
+.lc-swatch--off { background: var(--app-canvas); box-shadow: inset 0 0 0 1px var(--color-border); }
+
+.lc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; padding: 0 16px 16px; }
+.lc-wd { font-size: 12px; color: var(--color-text-muted); padding: 0 6px 2px; }
+.lc-cell {
+  display: flex; flex-direction: column; align-items: stretch; gap: 3px; min-width: 0; min-height: 96px; padding: 6px;
+  border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface);
+  text-align: left; cursor: pointer; color: var(--color-text); font: inherit;
+}
+.lc-grid--compact .lc-cell { min-height: 68px; }
+.lc-pad { min-height: 0; }
+.lc-cell:hover { background: var(--app-hover); }
+.lc-cell.is-off { background: var(--app-canvas); }
+.lc-cell.is-off .lc-num { color: var(--color-text-muted); }
+.lc-cell.is-past { opacity: 0.6; }
+.lc-cell:disabled { cursor: default; }
+.lc-cell:disabled:hover { background: var(--color-surface); }
+.lc-cell.is-off:disabled:hover { background: var(--app-canvas); }
+.lc-cell.is-today .lc-num { background: var(--color-primary); color: #fff; }
+.lc-cell.is-selected { box-shadow: 0 0 0 2px var(--color-text); border-color: transparent; }
+.lc-cell.is-holiday { border-color: color-mix(in srgb, #7A5AF0 45%, transparent); }
+.lc-cell:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+.lc-num {
+  align-self: flex-start; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.lc-holiday, .lc-chip, .lc-more {
+  display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font-size: 12px; line-height: 18px; padding: 0 6px; border-radius: 5px;
+}
+.lc-holiday { background: #7A5AF0; color: #fff; font-weight: 500; }
+.lc-more { color: var(--color-text-secondary); padding: 0 2px; }
+
+/* Chip colour comes from the leave type. Approved: solid tint. Waiting: striped. Planned: dashed outline. */
+.lc-chip { --c: #2F7FF0; color: var(--color-text); background: color-mix(in srgb, var(--c) 18%, var(--color-surface)); box-shadow: inset 3px 0 0 var(--c); }
+.lc-chip.is-mine { font-weight: 600; }
+.lc-chip--pending {
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--c) 20%, var(--color-surface)) 0 5px, var(--color-surface) 5px 10px);
+}
+.lc-chip--draft { background: var(--color-surface); box-shadow: none; border: 1.5px dashed var(--c); line-height: 15px; }
+.tone-blue { --c: #2F7FF0; }
+.tone-green { --c: #1F9D55; }
+.tone-orange { --c: #EA7A1E; }
+.tone-teal { --c: #0F9488; }
+.tone-purple { --c: #7A5AF0; }
+.tone-pink { --c: #DB2777; }
+
+/* Planner range */
+.lc-instruction { margin: 0; padding-top: 0; padding-bottom: 10px; }
+.lc-cell.in-range { background: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface)); border-color: color-mix(in srgb, var(--color-primary) 40%, transparent); }
+.lc-cell.in-range.is-off { background: color-mix(in srgb, var(--color-primary) 6%, var(--app-canvas)); }
+.lc-cell.range-start, .lc-cell.range-end { box-shadow: inset 0 0 0 2px var(--color-primary); }
+
+.lp-dates { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 12px 14px; border-radius: 12px; background: var(--app-canvas); font-size: 15px; }
+.lp-dates span:not(.hint) { color: var(--color-text-secondary); font-size: 14px; }
+.lp-projection { margin: 0; font-size: 14px; color: var(--color-text-secondary); }
+.lp-projection.is-short, .lp-bad { color: var(--color-danger, #DC2626); }
+
+.lp-bars { list-style: none; margin: 0; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+.lp-bars li { display: flex; flex-direction: column; gap: 6px; }
+.lp-bars__head { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.lp-bars__head span { color: var(--color-text-secondary); }
+.lp-bar { display: flex; height: 8px; border-radius: 999px; background: var(--app-canvas); box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; }
+.lp-bar__used { background: var(--color-primary); }
+.lp-bar__planned { background: repeating-linear-gradient(135deg, var(--color-primary) 0 3px, color-mix(in srgb, var(--color-primary) 35%, var(--color-surface)) 3px 6px); }
+
+.lp-draft { list-style: none; }
+.lp-draft .ui-row { flex-wrap: wrap; row-gap: 10px; }
+.lp-draft .ui-row__text { flex: 1 1 calc(100% - 56px); }
+.lp-draft .ui-row__trail { flex: 1 0 100%; flex-wrap: wrap; justify-content: flex-start; padding-left: 40px; }
+.lp-draft__file { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding: 0 16px 12px 56px; }
+.lp-draft__error { margin: 0; padding: 0 16px 12px 56px; }
+
+@media (max-width: 640px) {
+  .lc-grid { gap: 2px; padding: 0 8px 12px; }
+  .lc-cell { min-height: 56px; padding: 3px; border-radius: 7px; }
+  .lc-holiday, .lc-chip { font-size: 0; height: 6px; padding: 0; line-height: 6px; }
+  .lc-more { font-size: 10px; }
+}

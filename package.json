@@ -1,0 +1,23 @@
+{
+  "name": "hrms",
+  "private": true,
+  "version": "0.1.0",
+  "description": "HRMS platform monorepo: React web, Expo mobile, shared packages (Spring Boot API lives in /backend)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w web",
+    "dev:mobile": "npm run start -w mobile",
+    "dev:api": "cd backend && ./gradlew bootRun",
+    "build:web": "npm run build -w web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test:api": "cd backend && ./gradlew test",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

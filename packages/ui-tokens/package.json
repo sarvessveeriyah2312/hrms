@@ -1,0 +1,11 @@
+{
+  "name": "@hrms/ui-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design tokens shared by web (CSS variables) and mobile (theme object). Source: PRD section 11.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

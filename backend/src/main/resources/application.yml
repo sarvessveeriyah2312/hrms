@@ -1,0 +1,76 @@
+spring:
+  application:
+    name: hrms-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/hrms}
+    username: ${DB_USER:hrms_app}
+    password: ${DB_PASSWORD:hrms_app}
+  jackson:
+    deserialization:
+      # Jackson 3 rejects a missing boolean; clients may leave optional flags out (missing = false).
+      fail-on-null-for-primitives: false
+  servlet:
+    multipart:
+      max-file-size: 5MB      # documents (DatabaseFileStore checks again)
+      max-request-size: 6MB
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: ${PORT:8080}
+  error:
+    include-stacktrace: never
+  servlet:
+    context-path: /
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,modulith
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+
+hrms:
+  auth:
+    # Access tokens are signed and verified by the identity module (see IdentityConfig);
+    # the public key is published at /api/v1/auth/.well-known/jwks.json.
+    issuer: hrms-api
+    access-token-minutes: 15
+    refresh-token-days: 30
+    cookie-secure: ${HRMS_COOKIE_SECURE:true}
+  seed:
+    # Demo company and users for local development only (see application-local.yml).
+    enabled: false
+  attendance:
+    default-geofence-radius-m: 100
+    max-client-clock-drift-seconds: 120
+    offline-sync-max-age-hours: 72
+  firebase:
+    # When true, push notifications go through Firebase Cloud Messaging.
+    # Credentials come from GOOGLE_APPLICATION_CREDENTIALS (never commit the key file).
+    enabled: ${FIREBASE_ENABLED:false}
+    project-id: ${FIREBASE_PROJECT_ID:}
+
+logging:
+  level:
+    com.hrms: INFO

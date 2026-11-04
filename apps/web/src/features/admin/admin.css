@@ -1,0 +1,99 @@
+/* Administration pages, in the same card language as app.css. */
+
+.stack fieldset, .role-editor fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.stack legend, .role-editor legend {
+  display: flex; align-items: center; gap: 10px; padding: 0 0 4px;
+  font-size: 15px; font-weight: 600; color: var(--color-text);
+}
+.ui-card > .card-inset { margin: 0 20px 14px; }
+.inline-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding-top: 14px; border-top: 1px solid var(--color-border); margin: 0; padding: 14px 20px 18px; }
+.inline-form .field { flex: 1 1 220px; }
+
+.role-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.check {
+  display: flex; gap: 10px; align-items: flex-start; padding: 12px;
+  border: 1px solid var(--color-border); border-radius: 12px; cursor: pointer; background: var(--app-canvas);
+}
+.check:has(input:checked) { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface)); }
+.check input { margin-top: 3px; accent-color: var(--color-primary); }
+.check span { display: flex; flex-direction: column; font-size: 14px; color: var(--color-text); }
+.check small, .perm-row small { color: var(--color-text-muted); font-size: 13px; font-weight: 400; }
+
+.notice {
+  display: flex; flex-direction: column; gap: 8px; margin: 0;
+  padding: 14px 16px; border-radius: 12px;
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+  font-size: 14px;
+}
+.notice .btn { align-self: flex-start; }
+.secret {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 18px; letter-spacing: 0.04em;
+  padding: 8px 12px; border-radius: 10px; background: var(--color-surface); border: 1px solid var(--color-border);
+  user-select: all;
+}
+
+/* roles */
+.roles-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+.roles-layout > .ui-card:first-child { position: sticky; top: 16px; }
+.ui-row.is-selected { background: color-mix(in srgb, var(--color-primary) 8%, transparent); box-shadow: inset 3px 0 0 var(--color-primary); }
+.role-editor { display: flex; flex-direction: column; gap: 20px; padding: 8px 20px 20px; }
+.perm-module { border-top: 1px solid var(--color-border) !important; padding-top: 16px !important; }
+.perm-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 0 6px 34px; }
+.perm-row > span { display: flex; flex-direction: column; font-size: 14px; color: var(--color-text); }
+.perm-row strong { font-weight: 500; }
+.perm-row select {
+  flex: none; width: 180px; height: 36px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--color-border-strong); background: var(--color-surface); color: var(--color-text); font-size: 14px;
+}
+.perm-row select:disabled { opacity: 0.6; }
+
+@media (max-width: 900px) {
+  .roles-layout { grid-template-columns: minmax(0, 1fr); }
+  .roles-layout > .ui-card:first-child { position: static; }
+  .perm-row { flex-direction: column; align-items: stretch; padding-left: 0; }
+  .perm-row select { width: 100%; }
+}
+
+/* ---------- departments ---------- */
+.dept-layout { display: grid; grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.dept-tools .search-input { width: 100%; }
+.dept-mark { display: inline-grid; place-items: center; flex: none; border-radius: 10px; font-weight: 700; letter-spacing: 0.02em; }
+.dept-add { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 16px; border-top: 1px solid var(--color-border); }
+.dept-add .btn { align-self: flex-start; }
+.dept-add__form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.dept-add__form .input { flex: 1 1 160px; height: 34px; border-radius: 999px; font-size: 14px; }
+.dept-add__form .form-error { flex-basis: 100%; }
+
+.dept-head { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--color-border); }
+.dept-head__text { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; }
+.dept-head__text h2 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.dept-head__actions { display: flex; gap: 8px; }
+.dept-rename { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.dept-rename .input { flex: 1 1 220px; max-width: 360px; height: 38px; font-size: 16px; font-weight: 500; }
+.dept-error { margin-top: 14px; }
+
+.dept-confirm {
+  display: flex; flex-direction: column; gap: 8px; margin: 16px 24px 0; padding: 14px 16px; border-radius: 12px;
+  background: var(--color-danger-soft); color: var(--color-danger-text); font-size: 14px;
+}
+.dept-confirm.is-blocked { background: var(--color-warning-soft); color: var(--color-warning-text); }
+.dept-confirm ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.dept-confirm a { color: inherit; font-weight: 600; }
+.dept-confirm .btn { align-self: flex-start; }
+
+.dept-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px 24px; }
+.dept-stats > div { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: 12px; background: var(--app-canvas); }
+.dept-stats strong { font-size: 26px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.dept-stats span { font-size: 13px; color: var(--color-text-secondary); }
+
+.dept-members { border-top: 1px solid var(--color-border); }
+.dept-members__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px 6px; }
+.dept-members__head h3 { margin: 0; font-size: 15px; font-weight: 600; }
+
+@media (max-width: 900px) {
+  .dept-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .dept-stats { grid-template-columns: minmax(0, 1fr); }
+}
