@@ -931,7 +931,7 @@ export function createApiClient(opts: ApiClientOptions) {
     attendance: {
       /** Who's in, late, not in yet, on leave or off; date (YYYY-MM-DD) looks back at an earlier day. */
       today: (date?: string) => request<Today>('GET', `/attendance/today${date ? `?date=${date}` : ''}`),
-      /** Totals per person in your attendance:view scope. from/to: YYYY-MM-DD, up to 62 days; default this month. */
+      /** Totals per person in your attendance:timesheets scope. from/to: YYYY-MM-DD, up to 62 days; default this month. */
       timesheets: (range: { from?: string; to?: string } = {}) => request<TeamTimesheets>('GET', `/attendance/timesheets${query(range)}`),
       /** One person's days ('me' for your own). */
       timesheet: (employeeId: string | 'me', range: { from?: string; to?: string } = {}) =>

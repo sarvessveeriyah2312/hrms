@@ -128,6 +128,7 @@ class DemoDataSeeder implements ApplicationRunner {
                         p.put(m + ":approve", DataScope.TENANT);
                         p.put(m + ":manage", DataScope.TENANT);
                     }
+                    p.put("attendance:timesheets", DataScope.TENANT);
                     p.put("employee:view", DataScope.TENANT);
                     p.put("employee:manage", DataScope.TENANT);
                     p.put("reports:leave", DataScope.TENANT);
@@ -140,6 +141,7 @@ class DemoDataSeeder implements ApplicationRunner {
                         p.put(m + ":view", DataScope.TEAM);
                         p.put(m + ":approve", DataScope.TEAM);
                     }
+                    p.put("attendance:timesheets", DataScope.TEAM);
                     p.put("employee:view", DataScope.TEAM);
                     p.put("reports:leave", DataScope.TEAM);
                     p.put("reports:claims", DataScope.TEAM);
@@ -147,6 +149,7 @@ class DemoDataSeeder implements ApplicationRunner {
                 case EMPLOYEE -> {
                     selfService(p);
                     for (String m : List.of("attendance", "leave", "claims")) p.put(m + ":view", DataScope.SELF);
+                    p.put("attendance:timesheets", DataScope.SELF);
                     p.put("employee:view", DataScope.SELF);
                 }
             }

@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Timesheets: each person's clock-ins by day, with time worked, late arrival, early leaving and missed clock-outs,
- * plus totals; for one person or everyone in the caller's attendance:view scope. See {@link WorkDay}.
+ * plus totals; for one person or everyone in the caller's attendance:timesheets scope. See {@link WorkDay}.
  */
 @Service
 class TimesheetService {

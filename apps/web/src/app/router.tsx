@@ -44,7 +44,7 @@ export const router = createBrowserRouter([
           { path: 'account/password', element: <ChangePasswordPage /> },
           { path: 'attendance/sites', element: <RequirePermission module="attendance" any={['attendance:manage']}><SitesPage /></RequirePermission> },
           { path: 'people', element: <RequirePermission any={['employee:view']}><PeoplePage /></RequirePermission> },
-          { path: 'attendance', element: <RequirePermission module="attendance" any={['attendance:clock', 'attendance:view']}><AttendancePage /></RequirePermission> },
+          { path: 'attendance', element: <RequirePermission module="attendance" any={['attendance:clock', 'attendance:view', 'attendance:timesheets']}><AttendancePage /></RequirePermission> },
           { path: 'leave', element: <RequirePermission module="leave" any={['leave:apply', 'leave:view']}><LeavePage /></RequirePermission> },
           { path: 'leave/settings', element: <RequirePermission module="leave" any={['leave:manage']}><LeaveSettingsPage /></RequirePermission> },
           { path: 'claims', element: <RequirePermission module="claims" any={['claims:submit', 'claims:view']}><ClaimsPage /></RequirePermission> },

@@ -57,7 +57,8 @@ export const admin = {
   perm: {
     attendance: {
       clock: { name: 'Clock in and out', description: 'Record their own clock-ins.' },
-      view: { name: 'See attendance', description: 'See clock-ins and timesheets.' },
+      view: { name: 'See attendance', description: 'See who’s in today and their clock-ins.' },
+      timesheets: { name: 'See timesheets', description: 'Each person’s days: hours worked, late, left early, missed clock-outs.' },
       approve: { name: 'Approve corrections and overtime', description: 'Act on attendance requests.' },
       manage: { name: 'Manage attendance rules', description: 'Sites, geofences, Wi-Fi and shifts.' },
     },

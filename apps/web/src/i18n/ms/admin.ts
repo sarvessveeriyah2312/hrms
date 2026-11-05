@@ -59,7 +59,8 @@ export const admin: Shape<typeof en> = {
   perm: {
     attendance: {
       clock: { name: 'Daftar masuk dan keluar', description: 'Merekod daftar masuk sendiri.' },
-      view: { name: 'Lihat kehadiran', description: 'Lihat daftar masuk dan helaian masa.' },
+      view: { name: 'Lihat kehadiran', description: 'Lihat siapa yang hadir hari ini dan daftar masuk mereka.' },
+      timesheets: { name: 'Lihat helaian masa', description: 'Hari setiap orang: jam bekerja, lewat, pulang awal, tidak daftar keluar.' },
       approve: { name: 'Luluskan pembetulan dan kerja lebih masa', description: 'Bertindak atas permohonan kehadiran.' },
       manage: { name: 'Urus peraturan kehadiran', description: 'Tapak, geopagar, Wi-Fi dan syif.' },
     },

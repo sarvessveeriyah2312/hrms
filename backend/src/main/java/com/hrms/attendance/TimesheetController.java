@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Attendance → Timesheets. Your own: with attendance:clock or attendance:view. Other people's: attendance:view, within
- * its scope. from/to are dates (up to 62 days); without them, this month so far.
+ * Attendance → Timesheets. Your own: with attendance:clock or attendance:timesheets. Other people's:
+ * attendance:timesheets, within its scope. from/to are dates (up to 62 days); without them, this month so far.
  */
 @RestController
 @RequestMapping("/api/v1/attendance/timesheets")
@@ -35,17 +35,17 @@ class TimesheetController {
         this.perm = perm;
     }
 
-    /** Totals per person, for everyone in your attendance:view scope. */
+    /** Totals per person, for everyone in your attendance:timesheets scope. */
     @GetMapping
-    @PreAuthorize("@perm.has('attendance:view')")
+    @PreAuthorize("@perm.has('attendance:timesheets')")
     TimesheetService.Team team(@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate from,
                                @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate to,
                                @AuthenticationPrincipal Jwt jwt) {
-        return timesheets.team(meOrNull(jwt), viewScope(), from, to);
+        return timesheets.team(meOrNull(jwt), scope(), from, to);
     }
 
     @GetMapping("/me")
-    @PreAuthorize("@perm.has('attendance:clock') or @perm.has('attendance:view')")
+    @PreAuthorize("@perm.has('attendance:clock') or @perm.has('attendance:timesheets')")
     TimesheetService.Sheet mine(@RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate from,
                                 @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate to,
                                 @AuthenticationPrincipal Jwt jwt) {
@@ -56,21 +56,21 @@ class TimesheetController {
 
     /** One person's days. Answers 404 for people outside your scope, so their existence isn't revealed. */
     @GetMapping("/{employeeId}")
-    @PreAuthorize("@perm.has('attendance:clock') or @perm.has('attendance:view')")
+    @PreAuthorize("@perm.has('attendance:clock') or @perm.has('attendance:timesheets')")
     TimesheetService.Sheet person(@PathVariable UUID employeeId,
                                   @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate from,
                                   @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate to,
                                   @AuthenticationPrincipal Jwt jwt) {
         UUID me = meOrNull(jwt);
         boolean self = employeeId.equals(me);
-        if (!self && !(perm.has("attendance:view") && facts.canSee(me, viewScope(), employeeId))) {
+        if (!self && !(perm.has("attendance:timesheets") && facts.canSee(me, scope(), employeeId))) {
             throw new ApiException(HttpStatus.NOT_FOUND, "EMPLOYEE_NOT_FOUND", "That person doesn't exist.");
         }
         return timesheets.sheet(employeeId, from, to);
     }
 
-    private DataScope viewScope() {
-        return perm.scopeOf("attendance:view").orElse(DataScope.SELF);
+    private DataScope scope() {
+        return perm.scopeOf("attendance:timesheets").orElse(DataScope.SELF);
     }
 
     private static UUID meOrNull(Jwt jwt) {

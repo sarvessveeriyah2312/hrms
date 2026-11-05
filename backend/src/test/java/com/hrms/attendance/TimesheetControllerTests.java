@@ -50,14 +50,14 @@ class TimesheetControllerTests {
 
     @Test
     void anyoneMayOpenTheirOwnById() {
-        when(perm.has("attendance:view")).thenReturn(false);
+        when(perm.has("attendance:timesheets")).thenReturn(false);
         controller.person(ME, null, null, jwt(ME));
         verify(service).sheet(ME, null, null);
     }
 
     @Test
-    void someoneElsesNeedsAttendanceView() {
-        when(perm.has("attendance:view")).thenReturn(false);
+    void someoneElsesNeedsSeeTimesheets() {
+        when(perm.has("attendance:timesheets")).thenReturn(false);
         when(facts.canSee(any(), any(), any())).thenReturn(true);
         assertApiError(() -> controller.person(OTHER, null, null, jwt(ME)), HttpStatus.NOT_FOUND, "EMPLOYEE_NOT_FOUND");
         verify(service, never()).sheet(any(), any(), any());
@@ -65,8 +65,8 @@ class TimesheetControllerTests {
 
     @Test
     void peopleOutsideTheScopeLookMissing() {
-        when(perm.has("attendance:view")).thenReturn(true);
-        when(perm.scopeOf("attendance:view")).thenReturn(Optional.of(DataScope.TEAM));
+        when(perm.has("attendance:timesheets")).thenReturn(true);
+        when(perm.scopeOf("attendance:timesheets")).thenReturn(Optional.of(DataScope.TEAM));
         when(facts.canSee(ME, DataScope.TEAM, OTHER)).thenReturn(false);
         assertApiError(() -> controller.person(OTHER, null, null, jwt(ME)), HttpStatus.NOT_FOUND, "EMPLOYEE_NOT_FOUND");
         verify(service, never()).sheet(any(), any(), any());
@@ -74,20 +74,20 @@ class TimesheetControllerTests {
 
     @Test
     void peopleInsideTheScopeOpen() {
-        when(perm.has("attendance:view")).thenReturn(true);
-        when(perm.scopeOf("attendance:view")).thenReturn(Optional.of(DataScope.DEPARTMENT));
+        when(perm.has("attendance:timesheets")).thenReturn(true);
+        when(perm.scopeOf("attendance:timesheets")).thenReturn(Optional.of(DataScope.DEPARTMENT));
         when(facts.canSee(ME, DataScope.DEPARTMENT, OTHER)).thenReturn(true);
         controller.person(OTHER, null, null, jwt(ME));
         verify(service).sheet(OTHER, null, null);
     }
 
     @Test
-    void teamUsesTheViewScopeAndWorksWithoutAnEmployeeRecord() {
-        when(perm.scopeOf("attendance:view")).thenReturn(Optional.of(DataScope.TENANT));
+    void teamUsesTheTimesheetsScopeAndWorksWithoutAnEmployeeRecord() {
+        when(perm.scopeOf("attendance:timesheets")).thenReturn(Optional.of(DataScope.TENANT));
         controller.team(null, null, jwt(null));
         verify(service).team(null, DataScope.TENANT, null, null);
 
-        when(perm.scopeOf("attendance:view")).thenReturn(Optional.empty());
+        when(perm.scopeOf("attendance:timesheets")).thenReturn(Optional.empty());
         controller.team(null, null, jwt(ME));
         verify(service).team(ME, DataScope.SELF, null, null);
     }

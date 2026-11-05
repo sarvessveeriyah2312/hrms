@@ -59,7 +59,8 @@ export const admin: Shape<typeof en> = {
   perm: {
     attendance: {
       clock: { name: '上下班打卡', description: '记录本人的打卡。' },
-      view: { name: '查看考勤', description: '查看打卡记录和工时表。' },
+      view: { name: '查看考勤', description: '查看今日出勤情况和打卡记录。' },
+      timesheets: { name: '查看工时表', description: '每人每天的工作时长、迟到、早退和漏打下班卡。' },
       approve: { name: '审批考勤更正和加班', description: '处理考勤相关申请。' },
       manage: { name: '管理考勤规则', description: '工作地点、地理围栏、Wi-Fi 和班次。' },
     },

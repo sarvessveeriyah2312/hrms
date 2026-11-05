@@ -32,7 +32,8 @@ public final class PermissionCatalog {
     public static final List<Module> MODULES = List.of(
         new Module("attendance", "Attendance", true, List.of(
             new Action("clock", "Clock in and out", "Record their own clock-ins.", SELF_ONLY),
-            new Action("view", "See attendance", "See clock-ins and timesheets.", ANY),
+            new Action("view", "See attendance", "See who's in today and their clock-ins.", ANY),
+            new Action("timesheets", "See timesheets", "Each person's days: hours worked, late, left early, missed clock-outs.", ANY),
             new Action("approve", "Approve corrections and overtime", "Act on attendance requests.", OTHERS),
             new Action("manage", "Manage attendance rules", "Sites, geofences, Wi-Fi and shifts.", COMPANY))),
         new Module("leave", "Leave", true, List.of(
