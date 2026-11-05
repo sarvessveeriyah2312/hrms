@@ -11,6 +11,8 @@ import { Panel, TemporaryPassword } from './Panel';
 import { roleLabel, roleText } from '../../lib/modules';
 import { Icon } from '../../components/Icon';
 import { Avatar, Card, List, PageHeader, Row, StatCard, Status } from '../../components/app/kit';
+import { Pager } from '../../components/app/Pager';
+import { usePaging } from '../../lib/paging';
 import './admin.css';
 
 type Editing = { mode: 'new' } | { mode: 'edit'; user: AdminUser };
@@ -43,6 +45,7 @@ export function UsersPage() {
   const roles = useQuery({ queryKey: ['admin', 'roles'], queryFn: api.admin.roles });
   const departments = useQuery({ queryKey: ['admin', 'departments'], queryFn: api.admin.departments });
   const active = users.data?.filter((u) => u.status === 'ACTIVE').length ?? 0;
+  const paging = usePaging(users.data ?? [], { resetKey: q.trim().toLowerCase() });
   // Opened from search: /app/admin/users?open=<user id>
   const linked = openId ? users.data?.find((u) => u.userId === openId) : undefined;
   const editing: Editing | null = editingState ?? (linked ? { mode: 'edit', user: linked } : null);
@@ -78,7 +81,7 @@ export function UsersPage() {
         action={<input className="search-input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('users.search')} aria-label={t('users.searchLabel')} />}
       >
         <List>
-          {users.data?.map((u) => (
+          {paging.visible.map((u) => (
             <Row
               key={u.userId}
               lead={<Avatar name={u.fullName ?? u.email} size={36} />}
@@ -96,6 +99,7 @@ export function UsersPage() {
           {users.data && users.data.length === 0 && <Row title={t('people.noMatch', { q })} />}
           {users.isPending && <Row title={t('common.loading')} />}
         </List>
+        <Pager {...paging} label={t('users.everyone')} />
       </Card>
 
       {editing && (

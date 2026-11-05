@@ -10,6 +10,8 @@ import { moduleMeta } from '../../lib/modules';
 import { Glyph } from '../../components/Glyph';
 import { Card, EmptyState, List, PageHeader, Status } from '../../components/app/kit';
 import { Panel } from '../../components/app/Panel';
+import { Pager } from '../../components/app/Pager';
+import { usePaging } from '../../lib/paging';
 import { Timeline } from './Timeline';
 import { AttachmentButton } from '../../components/app/files';
 import { useInbox } from './useInbox';
@@ -36,6 +38,8 @@ export function ApprovalsPage() {
   };
   const mine = items.filter((i) => i.actingAs !== 'OVERRIDE');
   const others = items.filter((i) => i.actingAs === 'OVERRIDE');
+  const minePaging = usePaging(mine);
+  const othersPaging = usePaging(others, { pageSize: 10 });
 
   return (
     <>
@@ -52,14 +56,18 @@ export function ApprovalsPage() {
         {inbox.data && mine.length === 0 ? (
           <EmptyState icon="inbox" tone="green" title={t('approvals.empty')}>{t('approvals.emptyBody')}</EmptyState>
         ) : (
-          <List>{mine.map((i) => <InboxRow key={i.instanceId} item={i} onView={() => setViewing(i)} />)}</List>
+          <>
+            <List>{minePaging.visible.map((i) => <InboxRow key={i.instanceId} item={i} onView={() => setViewing(i)} />)}</List>
+            <Pager {...minePaging} label={t('approvals.waitingForYou')} />
+          </>
         )}
       </Card>
 
       {others.length > 0 && (
         <Card title={t('approvals.waitingForOthers')} count={others.length}>
           <p className="muted card-pad">{t('approvals.othersHint')}</p>
-          <List>{others.map((i) => <InboxRow key={i.instanceId} item={i} onView={() => setViewing(i)} />)}</List>
+          <List>{othersPaging.visible.map((i) => <InboxRow key={i.instanceId} item={i} onView={() => setViewing(i)} />)}</List>
+          <Pager {...othersPaging} label={t('approvals.waitingForOthers')} />
         </Card>
       )}
 

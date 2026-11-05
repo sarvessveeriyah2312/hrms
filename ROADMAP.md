@@ -10,11 +10,11 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 
 ## Phase 0 · Housekeeping
 
-- [ ] **Commit the current work** on a branch (claims, workflows for claims, search, reports, table, filters, translations; migrations V10–V12). · S
+- [x] **Commit the current work** on a branch (claims, workflows for claims, search, reports, table, filters, translations; migrations V10–V12). · S
 - [x] **Forgot password** by email link (one-time, expiring token; same answer whether or not the account exists). · S
 - [x] **Change password** from the account menu (needs the current password; signs out other sessions). · S
 - [x] **Email delivery** set up locally (Mailpit) and behind an interface, so password reset and later notifications can send mail. · S
-- [ ] **Paging on long lists:** Users, Claims → Team and To pay, Approvals (shared `Table` / `Pager`). · S
+- [x] **Paging on long lists:** Users, Claims → Team and To pay, Approvals (shared `Table` / `Pager`). · S
 
 ## Phase 1 · Attendance, round 1
 
