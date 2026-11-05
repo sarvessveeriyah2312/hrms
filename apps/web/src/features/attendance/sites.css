@@ -93,3 +93,12 @@
 .site-add__item.is-on { background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
 .site-add__foot { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--color-border); }
 .site-add__foot .btn { margin-left: auto; }
+
+/* Test a clock-in */
+.site-check__toggles { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.site-check__result { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border-radius: 12px; }
+.site-check__result > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13.5px; }
+.site-check__result strong { font-size: 15px; }
+.site-check__result--green { background: color-mix(in srgb, #12A150 10%, transparent); }
+.site-check__result--orange { background: color-mix(in srgb, #E5A00D 14%, transparent); }
+.site-check__result--pink { background: var(--color-danger-soft); }

@@ -10,6 +10,7 @@ import { Icon, type IconName } from '../../components/Icon';
 import { Card, EmptyState, PageHeader, Status, Toggle } from '../../components/app/kit';
 import { GeofenceMap } from '../../components/app/GeofenceMap';
 import { SitePeople } from './SitePeople';
+import { SiteCheck } from './SiteCheck';
 import './sites.css';
 
 const METHODS: { key: ClockMethod; icon: IconName }[] = [
@@ -101,6 +102,7 @@ function SiteLoader({ id, onDeleted }: { id: string; onDeleted: () => void }) {
     <div className="col">
       <SiteEditor key={site.data.updatedAt} site={site.data} onSaved={() => undefined} onDeleted={onDeleted} />
       <SitePeople site={site.data} />
+      <SiteCheck key={`${site.data.id}-check`} site={site.data} />
     </div>
   );
 }

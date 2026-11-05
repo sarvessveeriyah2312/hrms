@@ -105,4 +105,7 @@ public class Punch {
     public String[] getFlags() { return flags; }
     public Result getResult() { return result; }
     public UUID getSiteId() { return siteId; }
+
+    /** Set before saving, once the selfie has been checked (the person's own image, not used before). */
+    void setSelfieFileId(UUID selfieFileId) { this.selfieFileId = selfieFileId; }
 }

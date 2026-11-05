@@ -1,5 +1,6 @@
 package com.hrms.attendance;
 
+import com.hrms.shared.web.ApiException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -55,7 +57,19 @@ class PunchController {
     ClockResponse clock(@Valid @RequestBody ClockRequest request,
                         @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
                         @AuthenticationPrincipal Jwt jwt) {
-        UUID employeeId = UUID.fromString(jwt.getClaimAsString("employee_id"));
-        return service.clock(employeeId, request, idempotencyKey);
+        return service.clock(employeeOf(jwt), UUID.fromString(jwt.getSubject()), request, idempotencyKey);
+    }
+
+    /** Your active sites and what each needs, so the app can check before sending (the server checks again). */
+    @GetMapping("/sites")
+    @PreAuthorize("@perm.has('attendance:clock')")
+    List<PunchService.MySite> mySites(@AuthenticationPrincipal Jwt jwt) {
+        return service.mySites(employeeOf(jwt));
+    }
+
+    private static UUID employeeOf(Jwt jwt) {
+        String id = jwt.getClaimAsString("employee_id");
+        if (id == null) throw new ApiException(HttpStatus.FORBIDDEN, "NO_EMPLOYEE_RECORD", "Your account has no employee record, so it can't clock in.");
+        return UUID.fromString(id);
     }
 }

@@ -544,6 +544,18 @@ export interface SiteDetail {
   hasPunches: boolean;
 }
 
+/** A test clock-in's outcome (nothing saved). code/message explain a BLOCKED one. */
+export interface ClockCheck {
+  result: PunchResult; code: string | null; message: string | null;
+  site: string | null; distanceM: number | null; radiusM: number | null; flags: string[];
+}
+
+/** One of your sites, as the phone needs it to check before clocking in. */
+export interface MySite {
+  id: string; name: string; address: string | null; lat: number; lng: number; radiusM: number; methods: ClockMethod[];
+  wifiMode: WifiMode; remarksRequired: boolean; selfieRequired: boolean; wifiBssids: string[];
+}
+
 export interface SiteInput {
   name: string; address?: string | null; entityId?: string | null; active: boolean; lat: number; lng: number; radiusM: number;
   methods: ClockMethod[]; wifiMode: WifiMode; remarksRequired: boolean; wifi: SiteWifi[];
@@ -829,6 +841,12 @@ export function createApiClient(opts: ApiClientOptions) {
         request<SiteMember[]>('POST', `/attendance/sites/${id}/members`, { body: { employeeIds } }),
       removeMembers: (id: string, employeeIds: string[]) =>
         request<SiteMember[]>('POST', `/attendance/sites/${id}/members/remove`, { body: { employeeIds } }),
+      /** Would this person be able to clock in with this location and Wi-Fi? Uses their real sites; saves nothing. */
+      check: (input: { employeeId: string; lat?: number | null; lng?: number | null; accuracyM?: number | null; wifiBssid?: string | null;
+        selfie?: boolean; remarks?: string | null; mockLocation?: boolean }) =>
+        request<ClockCheck>('POST', '/attendance/sites/check', { body: input }),
+      /** Your own active sites (for the clock-in screen). */
+      mine: () => request<MySite[]>('GET', '/punches/sites'),
     },
     admin: {
       catalog: () => request<CatalogModule[]>('GET', '/admin/catalog'),

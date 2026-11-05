@@ -1,5 +1,6 @@
 package com.hrms.attendance;
 
+import com.hrms.shared.web.ApiException;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -24,10 +25,27 @@ class SiteController {
     record People(List<UUID> employeeIds) {
     }
 
-    private final SiteService sites;
+    /** A test clock-in for one person (nothing is saved). */
+    record CheckInput(UUID employeeId, Double lat, Double lng, Integer accuracyM, String wifiBssid, boolean selfie,
+                      String remarks, boolean mockLocation) {
+    }
 
-    SiteController(SiteService sites) {
+    private final SiteService sites;
+    private final PunchService punches;
+
+    SiteController(SiteService sites, PunchService punches) {
         this.sites = sites;
+        this.punches = punches;
+    }
+
+    /** Would this person be able to clock in, with this location and Wi-Fi? Uses their real sites; saves nothing. */
+    @PostMapping("/check")
+    @PreAuthorize("@perm.has('attendance:manage')")
+    PunchService.Check check(@RequestBody CheckInput in) {
+        if (in == null || in.employeeId() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "FIELDS_REQUIRED", "Choose the person to test.");
+        }
+        return punches.check(in.employeeId(), in.lat(), in.lng(), in.accuracyM(), in.wifiBssid(), in.selfie(), in.remarks(), in.mockLocation());
     }
 
     private static UUID actor(Jwt jwt) {

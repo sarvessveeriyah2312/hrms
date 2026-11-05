@@ -53,5 +53,19 @@ export const sites: Shape<typeof en> = {
     everyoneHere: 'Semua orang sudah berada di tapak ini.', narrow: '{{n}} lagi: cari untuk mengecilkan senarai.',
     pickedN_one: '{{count}} dipilih', pickedN_other: '{{count}} dipilih', clearPicked: 'Kosongkan',
     addN_one: 'Tambah {{count}} orang', addN_other: 'Tambah {{count}} orang',
+    check: {
+      title: 'Uji daftar masuk', body: 'Lihat sama ada seseorang boleh daftar masuk di sini, menggunakan tapak sebenar mereka. Tiada apa yang disimpan.',
+      noPeople: 'Tambah kakitangan ke tapak ini dahulu.',
+      where: 'Lokasi mereka', at: { pin: 'Di pin', outside: 'Di luar sedikit ({{m}} m)', far: '1 km jauhnya', none: 'Tiada lokasi dihantar', custom: 'Koordinat tepat' },
+      lat: 'Latitud', lng: 'Longitud', wifi: 'Wi-Fi', noWifi: 'Tiada Wi-Fi', otherWifi: 'Rangkaian lain',
+      remark: 'Catatan', selfie: 'Dengan swafoto', mock: 'Telefon melaporkan GPS palsu',
+      run: 'Uji', checking: 'Menyemak…',
+      result: { ACCEPTED: 'Akan diterima', FLAGGED: 'Akan diterima, ditanda untuk HR', BLOCKED: 'Akan ditolak' },
+      atSite: 'di {{site}}', distance: '{{d}} m dari pin (dibenarkan {{r}} m)', flags: 'Tanda: {{flags}}',
+    },
+    flag: {
+      FACE_NOT_VERIFIED: 'wajah belum disemak', ROOTED_DEVICE: 'telefon di-root atau jailbreak', DEVELOPER_MODE: 'mod pembangun hidup',
+      CLOCK_DRIFT: 'jam telefon tidak tepat', LOW_GPS_ACCURACY: 'GPS lemah',
+    },
   },
 };

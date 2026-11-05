@@ -51,5 +51,19 @@ export const sites = {
     everyoneHere: 'Everyone already belongs to this site.', narrow: '{{n}} more: search to narrow the list.',
     pickedN_one: '{{count}} chosen', pickedN_other: '{{count}} chosen', clearPicked: 'Clear',
     addN_one: 'Add {{count}} person', addN_other: 'Add {{count}} people',
+    check: {
+      title: 'Test a clock-in', body: 'See whether someone could clock in here, using their real sites. Nothing is saved.',
+      noPeople: 'Add people to this site first.',
+      where: 'Where they are', at: { pin: 'At the pin', outside: 'Just outside ({{m}} m away)', far: '1 km away', none: 'No location sent', custom: 'Exact coordinates' },
+      lat: 'Latitude', lng: 'Longitude', wifi: 'Wi-Fi', noWifi: 'Not on Wi-Fi', otherWifi: 'Another network',
+      remark: 'Remark', selfie: 'With a selfie', mock: 'Phone reports fake GPS',
+      run: 'Test', checking: 'Checking…',
+      result: { ACCEPTED: 'Would be accepted', FLAGGED: 'Would be accepted, flagged for HR', BLOCKED: 'Would be refused' },
+      atSite: 'at {{site}}', distance: '{{d}} m from the pin (allowed {{r}} m)', flags: 'Flags: {{flags}}',
+    },
+    flag: {
+      FACE_NOT_VERIFIED: 'face not checked yet', ROOTED_DEVICE: 'rooted or jailbroken phone', DEVELOPER_MODE: 'developer mode on',
+      CLOCK_DRIFT: 'phone clock is off', LOW_GPS_ACCURACY: 'weak GPS',
+    },
   },
 };

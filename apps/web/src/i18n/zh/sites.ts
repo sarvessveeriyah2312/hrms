@@ -53,5 +53,19 @@ export const sites: Shape<typeof en> = {
     everyoneHere: '所有人都已属于此地点。', narrow: '还有 {{n}} 人：请搜索以缩小范围。',
     pickedN_one: '已选 {{count}} 人', pickedN_other: '已选 {{count}} 人', clearPicked: '清除',
     addN_one: '添加 {{count}} 人', addN_other: '添加 {{count}} 人',
+    check: {
+      title: '测试打卡', body: '使用该员工真实的地点设置，查看其能否在此打卡。不会保存任何数据。',
+      noPeople: '请先向此地点添加人员。',
+      where: '所在位置', at: { pin: '在图钉处', outside: '刚好在外（{{m}} 米处）', far: '1 公里外', none: '未发送位置', custom: '精确坐标' },
+      lat: '纬度', lng: '经度', wifi: 'Wi-Fi', noWifi: '未连接 Wi-Fi', otherWifi: '其他网络',
+      remark: '备注', selfie: '附带自拍', mock: '手机报告虚拟定位',
+      run: '测试', checking: '正在检查…',
+      result: { ACCEPTED: '将被接受', FLAGGED: '将被接受，并标记给人事', BLOCKED: '将被拒绝' },
+      atSite: '在 {{site}}', distance: '距图钉 {{d}} 米（允许 {{r}} 米）', flags: '标记：{{flags}}',
+    },
+    flag: {
+      FACE_NOT_VERIFIED: '尚未进行人脸核验', ROOTED_DEVICE: '手机已 root 或越狱', DEVELOPER_MODE: '已开启开发者模式',
+      CLOCK_DRIFT: '手机时间不准确', LOW_GPS_ACCURACY: 'GPS 信号弱',
+    },
   },
 };
