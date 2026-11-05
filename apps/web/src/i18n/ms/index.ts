@@ -11,6 +11,7 @@ import { admin } from './admin';
 import { workflows } from './workflows';
 import { claims } from './claims';
 import { sites } from './sites';
+import { today } from './today';
 
 /** Bahasa Melayu. Every English key must be here (checked by the typecheck). */
-export const ms: Shape<typeof en> = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites };
+export const ms: Shape<typeof en> = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites, ...today };

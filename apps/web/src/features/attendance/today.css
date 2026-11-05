@@ -1,0 +1,10 @@
+/* Attendance → Today */
+.today-date { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.today-date__field { margin: 0; }
+.today-date__field .input { width: auto; }
+
+.today-person { display: flex; flex-direction: column; gap: 2px; font-weight: 500; }
+.today-person .muted { font-size: 12px; font-weight: 400; }
+
+.today-note { font-size: 13px; }
+.today-note.is-flagged { color: var(--color-warning-text); }

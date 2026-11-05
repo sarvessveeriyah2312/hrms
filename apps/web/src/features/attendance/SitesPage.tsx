@@ -115,10 +115,18 @@ function toForm(s: SiteDetail | null): Form {
     lat: s ? Number(s.lat) : null, lng: s ? Number(s.lng) : null, radiusM: s?.radiusM ?? 100,
     methods: s?.methods ?? ['GEOFENCE'], wifiMode: s?.wifiMode ?? 'GPS_OR_WIFI', remarksRequired: s?.remarksRequired ?? false,
     wifi: s?.wifi.map((w) => ({ ...w })) ?? [],
+    startTime: s?.startTime.slice(0, 5) ?? '09:00', endTime: s?.endTime.slice(0, 5) ?? '18:00', lateGraceMin: s?.lateGraceMin ?? 5,
   };
 }
 
 type Place = { display_name: string; lat: string; lon: string };
+
+/** "09:00" + 5 → "09:05". */
+function addMinutes(hhmm: string, minutes: number) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const total = (h * 60 + m + minutes) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
 
 function SiteEditor({ site, onSaved, onDeleted }: { site: SiteDetail | null; onSaved: (id: string) => void; onDeleted: () => void }) {
   const { t } = useTranslation();
@@ -265,6 +273,33 @@ function SiteEditor({ site, onSaved, onDeleted }: { site: SiteDetail | null; onS
           {fieldError('radiusM')}
           {form.lat !== null && form.lng !== null && (
             <p className="hint site-coords">{t('sites.coords', { lat: form.lat.toFixed(6), lng: form.lng.toFixed(6) })}</p>
+          )}
+        </div>
+      </Card>
+
+      {/* ---- working hours ---- */}
+      <Card title={t('sites.hoursTitle')} padded>
+        <div className="stack">
+          <p className="hint">{t('sites.hoursHint')}</p>
+          <div className="field-row site-hours">
+            <label className="field">
+              {t('sites.startTime')}
+              <input type="time" value={form.startTime} onChange={(e) => set('startTime', e.target.value)} required />
+            </label>
+            <label className="field">
+              {t('sites.endTime')}
+              <input type="time" value={form.endTime} onChange={(e) => set('endTime', e.target.value)} required />
+            </label>
+            <label className="field">
+              {t('sites.grace')}
+              <input type="number" min={0} max={120} step={1} value={form.lateGraceMin}
+                onChange={(e) => set('lateGraceMin', Math.max(0, Math.min(120, Math.round(Number(e.target.value) || 0))))} />
+            </label>
+          </div>
+          {fieldError('hours')}
+          {fieldError('lateGraceMin')}
+          {form.startTime && (
+            <p className="hint">{t('sites.lateAfter', { time: addMinutes(form.startTime, form.lateGraceMin) })}</p>
           )}
         </div>
       </Card>

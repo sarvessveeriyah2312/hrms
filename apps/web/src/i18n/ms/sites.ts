@@ -20,6 +20,10 @@ export const sites: Shape<typeof en> = {
     radius: 'Jejari geopagar', radiusValue: '{{m}} m', metres: 'Meter',
     radiusHint: 'Kakitangan mesti berada dalam bulatan ini untuk daftar masuk menggunakan lokasi. Telefon boleh tersasar 20–50 m di dalam bangunan, jadi beri sedikit ruang.',
     coords: 'Pusat: {{lat}}, {{lng}}',
+    hoursTitle: 'Waktu bekerja',
+    hoursHint: 'Bila kakitangan di sini dijangka hadir. Hari ini dan lembaran masa menggunakannya untuk menunjukkan siapa lewat atau pulang awal, sehingga syif disediakan.',
+    startTime: 'Mula', endTime: 'Tamat', grace: 'Tempoh kelonggaran (minit)',
+    lateAfter: 'Daftar masuk selepas {{time}} dikira lewat.',
     methodsTitle: 'Cara kakitangan daftar masuk di sini',
     methodsHint: 'Pilih sekurang-kurangnya satu cara untuk membuktikan seseorang berada di tapak: geopagar, Wi-Fi pejabat atau kiosk. Swafoto atau padanan wajah juga boleh diwajibkan.',
     method: {

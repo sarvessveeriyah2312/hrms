@@ -11,6 +11,7 @@ import { admin } from './admin';
 import { workflows } from './workflows';
 import { claims } from './claims';
 import { sites } from './sites';
+import { today } from './today';
 
 /** Simplified Chinese. Every English key must be here (checked by the typecheck). */
-export const zh: Shape<typeof en> = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites };
+export const zh: Shape<typeof en> = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites, ...today };

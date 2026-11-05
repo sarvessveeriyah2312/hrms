@@ -542,6 +542,8 @@ export interface SiteDetail {
   wifi: SiteWifi[]; members: SiteMember[]; updatedAt: string;
   /** People have clocked in here: it can be switched off but not deleted. */
   hasPunches: boolean;
+  /** Working hours ("09:00:00"), until shifts arrive; clock-ins after start + grace minutes are late. */
+  startTime: string; endTime: string; lateGraceMin: number;
 }
 
 /** A test clock-in's outcome (nothing saved). code/message explain a BLOCKED one. */
@@ -559,6 +561,43 @@ export interface MySite {
 export interface SiteInput {
   name: string; address?: string | null; entityId?: string | null; active: boolean; lat: number; lng: number; radiusM: number;
   methods: ClockMethod[]; wifiMode: WifiMode; remarksRequired: boolean; wifi: SiteWifi[];
+  /** "HH:mm". */
+  startTime: string; endTime: string; lateGraceMin: number;
+}
+
+// ---------- attendance today ----------
+
+export type DayStatus = 'IN' | 'LATE' | 'NOT_IN' | 'ON_LEAVE' | 'OFF';
+
+/** One person's day. Times are local to their legal entity ("09:12:00"). */
+export interface TodayPerson {
+  employeeId: string; employeeNo: string; fullName: string; department: string | null;
+  /** Where they clocked in, else the first site they belong to. */
+  siteId: string | null; site: string | null;
+  status: DayStatus;
+  /** When they were expected (start of day, or midday with morning leave); null when not expected. */
+  expectedAt: string | null;
+  firstIn: string | null;
+  /** Their last clock-out, when they've clocked out. */
+  lastOut: string | null;
+  /** Clocked in and not out again. */
+  stillIn: boolean;
+  /** Late clock-ins, or how long overdue someone not in yet is. */
+  minutesLate: number;
+  /** Not in, and past the expected time plus grace. */
+  overdue: boolean;
+  /** A clock-in today was flagged by the rules (e.g. outside the geofence on a lenient site). */
+  flagged: boolean;
+  leaveType: string | null; leavePart: 'FULL' | 'AM' | 'PM' | null;
+  offReason: 'HOLIDAY' | 'REST_DAY' | null;
+}
+
+export interface Today {
+  date: string; isToday: boolean; scope: DataScope; holiday: string | null;
+  sites: { id: string; name: string; startTime: string; endTime: string; graceMin: number }[];
+  people: TodayPerson[];
+  /** More people than the page can show; narrow the scope. */
+  truncated: boolean;
 }
 
 // ---------- company email (SMTP) ----------
@@ -847,6 +886,10 @@ export function createApiClient(opts: ApiClientOptions) {
         request<ClockCheck>('POST', '/attendance/sites/check', { body: input }),
       /** Your own active sites (for the clock-in screen). */
       mine: () => request<MySite[]>('GET', '/punches/sites'),
+    },
+    attendance: {
+      /** Who's in, late, not in yet, on leave or off; date (YYYY-MM-DD) looks back at an earlier day. */
+      today: (date?: string) => request<Today>('GET', `/attendance/today${date ? `?date=${date}` : ''}`),
     },
     admin: {
       catalog: () => request<CatalogModule[]>('GET', '/admin/catalog'),
