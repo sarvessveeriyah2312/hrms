@@ -6,6 +6,7 @@ import com.hrms.shared.web.ApiException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -41,14 +42,16 @@ class SiteService {
 
     record Detail(UUID id, String name, String address, UUID entityId, String entity, boolean active, BigDecimal lat,
                   BigDecimal lng, int radiusM, List<String> methods, String wifiMode, boolean remarksRequired,
-                  List<Wifi> wifi, List<Member> members, Instant updatedAt, boolean hasPunches) {
+                  List<Wifi> wifi, List<Member> members, Instant updatedAt, boolean hasPunches, LocalTime startTime,
+                  LocalTime endTime, int lateGraceMin) {
     }
 
     record Member(UUID employeeId, String employeeNo, String fullName, String department, List<String> otherSites) {
     }
 
     record Input(String name, String address, UUID entityId, Boolean active, Double lat, Double lng, Integer radiusM,
-                 List<String> methods, String wifiMode, Boolean remarksRequired, List<Wifi> wifi) {
+                 List<String> methods, String wifiMode, Boolean remarksRequired, List<Wifi> wifi, LocalTime startTime,
+                 LocalTime endTime, Integer lateGraceMin) {
     }
 
     record Entity(UUID id, String name) {
@@ -82,7 +85,7 @@ class SiteService {
     Detail find(UUID id) {
         Detail d = jdbc.sql("""
                 select s.id, s.name, s.address, s.entity_id, l.name as entity, s.active, s.lat, s.lng, s.radius_m, s.methods,
-                       s.wifi_mode, s.remarks_required, s.updated_at,
+                       s.wifi_mode, s.remarks_required, s.updated_at, s.start_time, s.end_time, s.late_grace_min,
                        exists (select 1 from punch p where p.site_id = s.id) as has_punches
                 from site s join legal_entity l on l.id = s.entity_id where s.id = :id""")
             .param("id", id)
@@ -90,12 +93,14 @@ class SiteService {
                 rs.getObject("entity_id", UUID.class), rs.getString("entity"), rs.getBoolean("active"), rs.getBigDecimal("lat"),
                 rs.getBigDecimal("lng"), rs.getInt("radius_m"), List.of((String[]) rs.getArray("methods").getArray()),
                 rs.getString("wifi_mode"), rs.getBoolean("remarks_required"), List.of(), List.of(),
-                rs.getTimestamp("updated_at").toInstant(), rs.getBoolean("has_punches")))
+                rs.getTimestamp("updated_at").toInstant(), rs.getBoolean("has_punches"), rs.getTime("start_time").toLocalTime(),
+                rs.getTime("end_time").toLocalTime(), rs.getInt("late_grace_min")))
             .optional().orElseThrow(SiteService::notFound);
         List<Wifi> wifi = jdbc.sql("select bssid, ssid, label from site_wifi where site_id = :id order by coalesce(ssid, ''), bssid")
             .param("id", id).query(Wifi.class).list();
         return new Detail(d.id(), d.name(), d.address(), d.entityId(), d.entity(), d.active(), d.lat(), d.lng(), d.radiusM(),
-            d.methods(), d.wifiMode(), d.remarksRequired(), wifi, members(id), d.updatedAt(), d.hasPunches());
+            d.methods(), d.wifiMode(), d.remarksRequired(), wifi, members(id), d.updatedAt(), d.hasPunches(), d.startTime(),
+            d.endTime(), d.lateGraceMin());
     }
 
     List<Member> members(UUID siteId) {
@@ -128,12 +133,15 @@ class SiteService {
         UUID id = UUID.randomUUID();
         try {
             jdbc.sql("""
-                    insert into site (id, tenant_id, entity_id, name, address, lat, lng, radius_m, methods, wifi_mode, remarks_required, active)
-                    values (:id, :tenant, :entity, :name, :address, :lat, :lng, :radius, cast(:methods as text[]), :mode, :remarks, :active)""")
+                    insert into site (id, tenant_id, entity_id, name, address, lat, lng, radius_m, methods, wifi_mode, remarks_required, active,
+                                      start_time, end_time, late_grace_min)
+                    values (:id, :tenant, :entity, :name, :address, :lat, :lng, :radius, cast(:methods as text[]), :mode, :remarks, :active,
+                            :start, :end, :grace)""")
                 .param("id", id).param("tenant", TenantContext.require()).param("entity", v.entityId()).param("name", v.name())
                 .param("address", v.address()).param("lat", v.lat()).param("lng", v.lng()).param("radius", v.radiusM())
                 .param("methods", arrayLiteral(v.methods())).param("mode", v.wifiMode()).param("remarks", v.remarksRequired())
-                .param("active", v.active()).update();
+                .param("active", v.active()).param("start", v.startTime()).param("end", v.endTime()).param("grace", v.lateGraceMin())
+                .update();
         } catch (DuplicateKeyException e) {
             throw nameTaken(v.name());
         }
@@ -150,11 +158,13 @@ class SiteService {
             jdbc.sql("""
                     update site set entity_id = :entity, name = :name, address = :address, lat = :lat, lng = :lng,
                            radius_m = :radius, methods = cast(:methods as text[]), wifi_mode = :mode,
-                           remarks_required = :remarks, active = :active, updated_at = now()
+                           remarks_required = :remarks, active = :active, start_time = :start, end_time = :end,
+                           late_grace_min = :grace, updated_at = now()
                     where id = :id""")
                 .param("entity", v.entityId()).param("name", v.name()).param("address", v.address()).param("lat", v.lat())
                 .param("lng", v.lng()).param("radius", v.radiusM()).param("methods", arrayLiteral(v.methods()))
                 .param("mode", v.wifiMode()).param("remarks", v.remarksRequired()).param("active", v.active())
+                .param("start", v.startTime()).param("end", v.endTime()).param("grace", v.lateGraceMin())
                 .param("id", id).update();
         } catch (DuplicateKeyException e) {
             throw nameTaken(v.name());
@@ -166,6 +176,7 @@ class SiteService {
         after.put("methods", v.methods());
         after.put("wifi", v.wifi().size());
         after.put("active", v.active());
+        after.put("hours", v.startTime() + "–" + v.endTime() + " (+" + v.lateGraceMin() + " min)");
         audit.record(actor, "SITE_UPDATED", "site", id, after);
         return find(id);
     }
@@ -217,7 +228,8 @@ class SiteService {
     // ---------- validation ----------
 
     private record Valid(String name, String address, UUID entityId, boolean active, BigDecimal lat, BigDecimal lng, int radiusM,
-                         List<String> methods, String wifiMode, boolean remarksRequired, List<Wifi> wifi) {
+                         List<String> methods, String wifiMode, boolean remarksRequired, List<Wifi> wifi, LocalTime startTime,
+                         LocalTime endTime, int lateGraceMin) {
     }
 
     private Valid validate(Input in) {
@@ -264,8 +276,13 @@ class SiteService {
         if (methods.contains("WIFI") && wifi.isEmpty()) {
             throw invalid("wifi", "Add the office Wi-Fi access points, or switch off the Office Wi-Fi method.");
         }
+        LocalTime start = in.startTime() == null ? LocalTime.of(9, 0) : in.startTime().withSecond(0).withNano(0);
+        LocalTime end = in.endTime() == null ? LocalTime.of(18, 0) : in.endTime().withSecond(0).withNano(0);
+        if (!end.isAfter(start)) throw invalid("hours", "The working day must end after it starts.");
+        int grace = in.lateGraceMin() == null ? 5 : in.lateGraceMin();
+        if (grace < 0 || grace > 120) throw invalid("lateGraceMin", "Grace time must be between 0 and 120 minutes.");
         return new Valid(name, address, entity, in.active() == null || in.active(), coord(in.lat()), coord(in.lng()), radius,
-            methods, mode, in.remarksRequired() != null && in.remarksRequired(), wifi);
+            methods, mode, in.remarksRequired() != null && in.remarksRequired(), wifi, start, end, grace);
     }
 
     /** Accepts 3C-84-6A-12-9F-01, 3c:84:6a:12:9f:01 or 3c846a129f01. */

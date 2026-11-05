@@ -1,0 +1,29 @@
+/* Attendance: Today and timesheets */
+.att-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin-bottom: 16px;
+}
+.att-toolbar__lead { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.att-toolbar__title { margin: 0; font-size: 18px; font-weight: 600; }
+.att-toolbar__title .muted { font-weight: 400; }
+
+.today-date { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.today-date__field { margin: 0; }
+.today-date__field .input { width: auto; }
+
+.month-picker { display: inline-flex; align-items: center; gap: 6px; }
+.month-picker .input { width: auto; }
+.month-picker .icon-pill { width: 32px; height: 32px; }
+.month-picker .icon-pill:disabled { opacity: 0.4; cursor: default; }
+
+.today-person { display: flex; flex-direction: column; gap: 2px; font-weight: 500; }
+.today-person .muted { font-size: 12px; font-weight: 400; }
+.link-button.today-person { color: var(--color-text); }
+.link-button.today-person > span:first-child { color: var(--color-primary); }
+
+.today-note { font-size: 13px; }
+.today-note.is-flagged { color: var(--color-warning-text); }
+
+.ts-sessions { display: flex; flex-wrap: wrap; gap: 2px 10px; font-variant-numeric: tabular-nums; }
+.ts-sessions .is-open { color: var(--color-text-secondary); }
+.ts-sessions .is-missing { color: var(--color-danger-text); font-weight: 600; }
+.ui-table .is-warning { color: var(--color-warning-text); font-weight: 600; }

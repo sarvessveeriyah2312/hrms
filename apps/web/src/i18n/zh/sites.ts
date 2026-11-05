@@ -20,6 +20,10 @@ export const sites: Shape<typeof en> = {
     radius: '地理围栏半径', radiusValue: '{{m}} 米', metres: '米',
     radiusHint: '员工必须在此圆圈内才能通过位置打卡。室内手机定位可能偏差 20–50 米，请适当放宽。',
     coords: '中心：{{lat}}, {{lng}}',
+    hoursTitle: '工作时间',
+    hoursHint: '员工在此地点的预期上班时间。在设置班次之前，“今天”和考勤表会据此显示迟到或早退。',
+    startTime: '上班', endTime: '下班', grace: '宽限（分钟）',
+    lateAfter: '{{time}} 之后打卡算作迟到。',
     methodsTitle: '员工在此如何打卡',
     methodsHint: '至少选择一种证明员工在现场的方式：地理围栏、办公 Wi-Fi 或打卡机。还可以要求自拍或人脸比对。',
     method: {

@@ -13,6 +13,8 @@ import { Glyph } from '../../components/Glyph';
 import { Icon } from '../../components/Icon';
 import { Avatar, Card, EmptyState, List, PageHeader, Row, StatCard, Status, Tabs } from '../../components/app/kit';
 import { Panel } from '../../components/app/Panel';
+import { Pager } from '../../components/app/Pager';
+import { usePaging } from '../../lib/paging';
 import { AttachmentButton, FileField } from '../../components/app/files';
 import { Timeline } from '../approvals/Timeline';
 import { chainText } from './chain';
@@ -219,6 +221,7 @@ function TeamTab({ onOpen }: { onOpen: (id: string) => void }) {
   });
   const claims = team.data?.claims ?? [];
   const byCurrency = totals(claims);
+  const paging = usePaging(claims, { resetKey: filter });
 
   return (
     <Card
@@ -239,7 +242,7 @@ function TeamTab({ onOpen }: { onOpen: (id: string) => void }) {
       </div>
       {team.isError && <p className="form-error" role="alert">{errorText(team.error)}</p>}
       <List>
-        {claims.map((c) => (
+        {paging.visible.map((c) => (
           <Row
             key={c.id}
             lead={<Avatar name={c.employeeName} />}
@@ -251,6 +254,7 @@ function TeamTab({ onOpen }: { onOpen: (id: string) => void }) {
         ))}
         {team.data && claims.length === 0 && <Row title={t('claims.teamEmpty')} meta={t('claims.last90')} />}
       </List>
+      <Pager {...paging} label={t('claims.teamTitle')} />
     </Card>
   );
 }
@@ -279,6 +283,7 @@ function PayTab({ claims, onOpen }: { claims: Claim[] | undefined; onOpen: (id: 
     return next;
   });
   const allOn = list.length > 0 && picked.length === list.length;
+  const paging = usePaging(list);
 
   const pay = useMutation({
     mutationFn: () => api.claims.pay(picked.map((c) => c.id), reference.trim() || undefined),
@@ -310,7 +315,7 @@ function PayTab({ claims, onOpen }: { claims: Claim[] | undefined; onOpen: (id: 
               </label>
             </div>
             <ul className="ui-list pay-list">
-              {list.map((c) => (
+              {paging.visible.map((c) => (
                 <li key={c.id} className={selected.has(c.id) ? 'pay-row is-on' : 'pay-row'}>
                   <label className="pay-row__check">
                     <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)}
@@ -323,6 +328,7 @@ function PayTab({ claims, onOpen }: { claims: Claim[] | undefined; onOpen: (id: 
                 </li>
               ))}
             </ul>
+            <Pager {...paging} label={t('claims.pay.title')} />
             <form
               className="pay-bar"
               onSubmit={(e) => {

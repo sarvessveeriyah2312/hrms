@@ -5,7 +5,6 @@ import { ApprovalsPage } from '../features/approvals/ApprovalsPage';
 import { LoginPage } from '../features/auth/LoginPage';
 import { LandingPage } from '../features/landing/LandingPage';
 import { GetStartedPage } from '../features/landing/GetStartedPage';
-import { PlaceholderPage } from './PlaceholderPage';
 import { RequireAuth } from './RequireAuth';
 import { RequirePermission } from './RequirePermission';
 import { PeoplePage } from '../features/people/PeoplePage';
@@ -20,6 +19,7 @@ import { ClaimsPage } from '../features/claims/ClaimsPage';
 import { ClaimSettingsPage } from '../features/claims/ClaimSettingsPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { SitesPage } from '../features/attendance/SitesPage';
+import { AttendancePage } from '../features/attendance/AttendancePage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { ChangePasswordPage } from '../features/account/ChangePasswordPage';
 
@@ -44,7 +44,7 @@ export const router = createBrowserRouter([
           { path: 'account/password', element: <ChangePasswordPage /> },
           { path: 'attendance/sites', element: <RequirePermission module="attendance" any={['attendance:manage']}><SitesPage /></RequirePermission> },
           { path: 'people', element: <RequirePermission any={['employee:view']}><PeoplePage /></RequirePermission> },
-          { path: 'attendance', element: <RequirePermission module="attendance" any={['attendance:clock', 'attendance:view']}><PlaceholderPage module="attendance" /></RequirePermission> },
+          { path: 'attendance', element: <RequirePermission module="attendance" any={['attendance:clock', 'attendance:view']}><AttendancePage /></RequirePermission> },
           { path: 'leave', element: <RequirePermission module="leave" any={['leave:apply', 'leave:view']}><LeavePage /></RequirePermission> },
           { path: 'leave/settings', element: <RequirePermission module="leave" any={['leave:manage']}><LeaveSettingsPage /></RequirePermission> },
           { path: 'claims', element: <RequirePermission module="claims" any={['claims:submit', 'claims:view']}><ClaimsPage /></RequirePermission> },

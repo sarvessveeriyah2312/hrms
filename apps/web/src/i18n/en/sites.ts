@@ -18,6 +18,10 @@ export const sites = {
     radius: 'Geofence radius', radiusValue: '{{m}} m', metres: 'Metres',
     radiusHint: 'People must be inside this circle to clock in by location. Phones can be 20–50 m off indoors, so allow a little extra.',
     coords: 'Centre: {{lat}}, {{lng}}',
+    hoursTitle: 'Working hours',
+    hoursHint: 'When people here are expected. Today and timesheets use these to show who’s late or left early, until shifts are set up.',
+    startTime: 'Starts', endTime: 'Ends', grace: 'Grace (minutes)',
+    lateAfter: 'Clock-ins after {{time}} count as late.',
     methodsTitle: 'How people clock in here',
     methodsHint: 'Choose at least one way to prove someone is at the site: geofence, office Wi-Fi or the kiosk. A selfie or face match can be required as well.',
     method: {
