@@ -42,6 +42,26 @@ final class WorkDay {
     private WorkDay() {
     }
 
+    /**
+     * The clock-ins with an approved correction applied. A corrected clock-in replaces the first session's clock-in
+     * (and anything earlier); a corrected clock-out replaces the last session's clock-out (and anything later), or
+     * closes it when it was left open. Clock-ins in between (a lunch break) are kept.
+     */
+    static List<Clocking> corrected(List<Clocking> clockings, LocalTime in, LocalTime out) {
+        List<Clocking> list = new ArrayList<>(clockings.stream().sorted(Comparator.comparing(Clocking::at)).toList());
+        if (in != null) {
+            if (!list.isEmpty() && list.get(0).type() == Punch.Type.IN) list.remove(0);
+            list.removeIf(c -> c.at().isBefore(in));
+            list.add(0, new Clocking(in, Punch.Type.IN));
+        }
+        if (out != null) {
+            if (!list.isEmpty() && list.get(list.size() - 1).type() == Punch.Type.OUT) list.remove(list.size() - 1);
+            list.removeIf(c -> c.at().isAfter(out));
+            list.add(new Clocking(out, Punch.Type.OUT));
+        }
+        return list;
+    }
+
     static Result of(Input in) {
         DayStatus.Hours h = in.hours() == null ? DayStatus.Hours.DEFAULT : in.hours();
         List<Clocking> sorted = in.clockings().stream().sorted(Comparator.comparing(Clocking::at)).toList();

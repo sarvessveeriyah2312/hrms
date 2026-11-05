@@ -331,7 +331,7 @@ export interface FlowStep {
 }
 
 /** What a workflow is for. */
-export type FlowSubject = 'LEAVE' | 'CLAIM';
+export type FlowSubject = 'LEAVE' | 'CLAIM' | 'CORRECTION';
 
 export interface ApprovalFlow {
   id: string;
@@ -618,6 +618,32 @@ export interface TimesheetDay {
   workedMin: number; lateMin: number; earlyMin: number;
   missedOut: boolean; stillIn: boolean; flagged: boolean;
   overdue: boolean; overdueMin: number;
+  /** An approved correction changed this day's times. */
+  corrected: boolean;
+  /** The day's latest correction request, if any. */
+  correction: { id: string; status: CorrectionStatus; clockIn: string | null; clockOut: string | null } | null;
+}
+
+// ---------- attendance corrections ----------
+
+export type CorrectionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED';
+
+/** Asks for a day's first clock-in and/or last clock-out to be set ("HH:mm", local to the person). */
+export interface CorrectionInput { date: string; clockIn: string | null; clockOut: string | null; reason: string }
+
+export interface AttendanceCorrection {
+  id: string; employeeId: string; employeeName: string; employeeNo: string;
+  date: string; clockIn: string | null; clockOut: string | null; reason: string;
+  status: CorrectionStatus; returnedComment: string | null; createdAt: string; decidedAt: string | null;
+  pendingWith: { level: number; totalSteps: number; label: string; approver: string } | null;
+  canCancel: boolean; canEdit: boolean;
+}
+
+export interface CorrectionDetail {
+  correction: AttendanceCorrection;
+  /** What the clock-ins showed that day, before any correction. */
+  recorded: { firstIn: string | null; lastOut: string | null; sessions: WorkSession[] };
+  timeline: TimelineStep[];
 }
 
 export interface TimesheetTotals {
@@ -936,6 +962,15 @@ export function createApiClient(opts: ApiClientOptions) {
       /** One person's days ('me' for your own). */
       timesheet: (employeeId: string | 'me', range: { from?: string; to?: string } = {}) =>
         request<Timesheet>('GET', `/attendance/timesheets/${employeeId}${query(range)}`),
+      corrections: {
+        /** Your own requests, newest day first. */
+        mine: () => request<AttendanceCorrection[]>('GET', '/attendance/corrections'),
+        submit: (input: CorrectionInput) => request<AttendanceCorrection>('POST', '/attendance/corrections', { body: input }),
+        /** Edit one sent back for changes; it goes for approval again. */
+        resubmit: (id: string, input: CorrectionInput) => request<AttendanceCorrection>('PUT', `/attendance/corrections/${id}`, { body: input }),
+        cancel: (id: string) => request<void>('POST', `/attendance/corrections/${id}/cancel`),
+        detail: (id: string) => request<CorrectionDetail>('GET', `/attendance/corrections/${id}`),
+      },
     },
     admin: {
       catalog: () => request<CatalogModule[]>('GET', '/admin/catalog'),

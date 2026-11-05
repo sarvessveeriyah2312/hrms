@@ -103,4 +103,50 @@ class WorkDayTests {
         assertThat(r.status().overdue()).isTrue();
         assertThat(r.workedMin()).isZero();
     }
+
+    // ---------- corrections ----------
+
+    private static WorkDay.Result corrected(String in, String out, String... entries) {
+        var clocks = WorkDay.corrected(clocks(entries), in == null ? null : LocalTime.parse(in), out == null ? null : LocalTime.parse(out));
+        return WorkDay.of(new WorkDay.Input(DAY, true, null, HOURS, clocks, NEXT_MORNING));
+    }
+
+    @Test
+    void aCorrectedClockOutClosesAMissedOne() {
+        var r = corrected(null, "18:00", "09:00 IN");
+        assertThat(r.missedOut()).isFalse();
+        assertThat(r.workedMin()).isEqualTo(9 * 60);
+        assertThat(r.lastOut()).isEqualTo(LocalTime.of(18, 0));
+    }
+
+    @Test
+    void aCorrectedClockInReplacesALateOne() {
+        var r = corrected("09:00", null, "09:40 IN", "18:00 OUT");
+        assertThat(r.lateMin()).isZero();
+        assertThat(r.firstIn()).isEqualTo(LocalTime.of(9, 0));
+        assertThat(r.workedMin()).isEqualTo(9 * 60);
+    }
+
+    @Test
+    void aCorrectedClockOutReplacesAnEarlyOne() {
+        var r = corrected(null, "18:00", "09:00 IN", "17:00 OUT");
+        assertThat(r.earlyMin()).isZero();
+        assertThat(r.sessions()).containsExactly(new WorkDay.Session(LocalTime.of(9, 0), LocalTime.of(18, 0)));
+    }
+
+    @Test
+    void aCorrectionKeepsTheLunchBreak() {
+        var r = corrected(null, "18:00", "09:00 IN", "12:30 OUT", "13:30 IN");
+        assertThat(r.sessions()).containsExactly(
+            new WorkDay.Session(LocalTime.of(9, 0), LocalTime.of(12, 30)),
+            new WorkDay.Session(LocalTime.of(13, 30), LocalTime.of(18, 0)));
+        assertThat(r.workedMin()).isEqualTo(8 * 60);
+    }
+
+    @Test
+    void bothTimesOnADayWithNoClockIns() {
+        var r = corrected("09:00", "18:00");
+        assertThat(r.status().status()).isEqualTo(DayStatus.Status.IN);
+        assertThat(r.workedMin()).isEqualTo(9 * 60);
+    }
 }

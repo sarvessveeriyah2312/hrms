@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Approval workflow settings for leave ({@code subject=LEAVE}, the default) and claims ({@code subject=CLAIM}).
+ * Approval workflow settings for leave ({@code subject=LEAVE}, the default), claims ({@code subject=CLAIM}) and
+ * attendance corrections ({@code subject=CORRECTION}).
  * Needs workflow:manage (the Super admin role, unless given to others in Roles).
  */
 @RestController
@@ -30,7 +31,7 @@ class ApprovalFlowsController {
     record Order(List<UUID> order) {
     }
 
-    private static final Set<String> SUBJECTS = Set.of("LEAVE", "CLAIM");
+    private static final Set<String> SUBJECTS = Set.of("LEAVE", "CLAIM", "CORRECTION");
 
     private final ApprovalFlows flows;
 
@@ -44,7 +45,7 @@ class ApprovalFlowsController {
 
     private static String subject(String value) {
         String s = value == null || value.isBlank() ? "LEAVE" : value.trim().toUpperCase();
-        if (!SUBJECTS.contains(s)) throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_SUBJECT", "Workflows are for LEAVE or CLAIM.");
+        if (!SUBJECTS.contains(s)) throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_SUBJECT", "Workflows are for LEAVE, CLAIM or CORRECTION.");
         return s;
     }
 

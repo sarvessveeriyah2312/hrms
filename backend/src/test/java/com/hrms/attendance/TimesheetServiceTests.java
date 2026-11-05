@@ -138,6 +138,29 @@ class TimesheetServiceTests {
     }
 
     @Test
+    void anApprovedCorrectionChangesTheDayAndAPendingOneDoesNot() {
+        clock("2026-11-03", "09:00", Punch.Type.IN);   // forgot to clock out
+        clock("2026-11-04", "09:00", Punch.Type.IN);   // forgot to clock out too, correction still waiting
+        UUID approved = UUID.randomUUID(), pending = UUID.randomUUID();
+        when(facts.corrections(anyList(), any(), any())).thenReturn(Map.of(ME, List.of(
+            new AttendanceFacts.CorrectionRow(approved, ME, LocalDate.of(2026, 11, 3), null, LocalTime.of(18, 0), "APPROVED"),
+            new AttendanceFacts.CorrectionRow(pending, ME, LocalDate.of(2026, 11, 4), null, LocalTime.of(18, 0), "PENDING"))));
+
+        var days = service.sheet(ME, null, null).days();
+        var tue = days.get(2);
+        assertThat(tue.corrected()).isTrue();
+        assertThat(tue.missedOut()).isFalse();
+        assertThat(tue.workedMin()).isEqualTo(9 * 60);
+        assertThat(tue.correction().status()).isEqualTo("APPROVED");
+
+        var wed = days.get(3);
+        assertThat(wed.corrected()).isFalse();
+        assertThat(wed.missedOut()).isTrue();
+        assertThat(wed.correction().id()).isEqualTo(pending);
+        assertThat(days.get(1).correction()).isNull();
+    }
+
+    @Test
     void aPastDayWithNoClockInIsAbsent() {
         var t = service.sheet(ME, null, null).totals();
         assertThat(t.absent()).isEqualTo(3);   // Mon–Wed; Sunday is a rest day and Thursday isn't over

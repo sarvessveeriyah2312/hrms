@@ -17,7 +17,8 @@ type Tab = (typeof TABS)[number];
 
 /**
  * Approval workflow settings: build who approves which leave requests or claims, in what order, and try it out.
- * ?for=claims switches to claim workflows (only when the company has the Claims module).
+ * ?for=claims switches to claim workflows and ?for=corrections to attendance corrections (only when the company has
+ * that module).
  */
 export function WorkflowsPage() {
   const { t } = useTranslation();
@@ -25,12 +26,20 @@ export function WorkflowsPage() {
   const [params, setParams] = useSearchParams();
   const hasClaims = hasModule(user, 'claims');
   const hasLeave = hasModule(user, 'leave');
-  const subject: FlowSubject = (params.get('for') === 'claims' && hasClaims) || (!hasLeave && hasClaims) ? 'CLAIM' : 'LEAVE';
-  const tab: Tab = (TABS as readonly string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as Tab) : 'flows';
+  const hasAttendance = hasModule(user, 'attendance');
+  const subjects = ([hasLeave && 'LEAVE', hasClaims && 'CLAIM', hasAttendance && 'CORRECTION'] as const)
+    .filter((s): s is FlowSubject => !!s);
+  const wanted: FlowSubject = params.get('for') === 'claims' ? 'CLAIM' : params.get('for') === 'corrections' ? 'CORRECTION' : 'LEAVE';
+  const subject: FlowSubject = subjects.includes(wanted) ? wanted : subjects[0] ?? 'LEAVE';
+  const correction = subject === 'CORRECTION';
+  // Corrections have nothing to try out (no types or amounts), so they only have the workflows tab.
+  const requested: Tab = (TABS as readonly string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as Tab) : 'flows';
+  const tab: Tab = correction ? 'flows' : requested;
   const go = (next: { subject?: FlowSubject; tab?: Tab }) => {
     const s = next.subject ?? subject;
     const tb = next.tab ?? tab;
-    setParams({ ...(s === 'CLAIM' ? { for: 'claims' } : {}), ...(tb === 'try' ? { tab: 'try' } : {}) }, { replace: true });
+    const forParam = s === 'CLAIM' ? { for: 'claims' } : s === 'CORRECTION' ? { for: 'corrections' } : {};
+    setParams({ ...forParam, ...(tb === 'try' && s !== 'CORRECTION' ? { tab: 'try' } : {}) }, { replace: true });
   };
   const flows = useQuery({ queryKey: ['workflow', 'flows', subject], queryFn: () => api.workflow.flows(subject) });
   // Selection per subject, so switching back keeps your place.
@@ -49,15 +58,15 @@ export function WorkflowsPage() {
     <>
       <PageHeader
         title={t('nav.workflows')}
-        subtitle={tab === 'flows' ? (claim ? t('wf.subtitleClaim') : t('wf.subtitle')) : (claim ? t('wf.trySubtitleClaim') : t('wf.trySubtitle'))}
+        subtitle={tab === 'flows' ? (claim ? t('wf.subtitleClaim') : correction ? t('wf.subtitleCorrection') : t('wf.subtitle')) : (claim ? t('wf.trySubtitleClaim') : t('wf.trySubtitle'))}
         actions={tab === 'flows' && <button type="button" className="btn primary" onClick={() => setSelected('new')}><Icon name="plus" size={16} />{t('wf.new')}</button>}
       />
 
-      {hasClaims && hasLeave && (
+      {subjects.length > 1 && (
         <div className="wf-subject">
           <span className="wf-label" id="wf-subject-label">{t('wf.forLabel')}</span>
           <div className="segmented" role="radiogroup" aria-labelledby="wf-subject-label">
-            {(['LEAVE', 'CLAIM'] as FlowSubject[]).map((s) => (
+            {subjects.map((s) => (
               <label key={s} className={subject === s ? 'is-on' : undefined}>
                 <input type="radio" name="wf-subject" checked={subject === s} onChange={() => go({ subject: s })} />
                 {t(`wf.subjects.${s}`)}
@@ -74,7 +83,7 @@ export function WorkflowsPage() {
         onChange={(key) => go({ tab: key as Tab })}
         tabs={[
           { key: 'flows', label: t('wf.tabFlows'), icon: 'switch', count: flows.data?.length },
-          { key: 'try', label: t('wf.tabTry'), icon: 'search' },
+          ...(correction ? [] : [{ key: 'try', label: t('wf.tabTry'), icon: 'search' as const }]),
         ]}
       >
         {tab === 'flows' && (
@@ -92,7 +101,7 @@ export function WorkflowsPage() {
               <Card>
                 <EmptyState icon="switch" tone="blue" title={t('wf.noneTitle')}
                   action={<button type="button" className="btn primary" onClick={() => setSelected('new')}>{t('wf.buildFirst')}</button>}>
-                  {claim ? t('wf.noneBodyClaim') : t('wf.noneBody')}
+                  {claim ? t('wf.noneBodyClaim') : correction ? t('wf.noneBodyCorrection') : t('wf.noneBody')}
                 </EmptyState>
               </Card>
             )}

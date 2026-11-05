@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import type { TimesheetDay, TimesheetTotals } from '@hrms/api-client';
+import type { AttendanceCorrection, TimesheetDay, TimesheetTotals } from '@hrms/api-client';
 import { api } from '../../lib/api';
 import { errorText, SCOPE_LABEL } from '../../lib/access';
-import { formatDate, isoDate } from '../../lib/dates';
+import { addDays, formatDate, isoDate } from '../../lib/dates';
 import { useUrlFilters, type FilterDef } from '../../lib/filters';
 import { PAGE_SIZES } from '../../lib/paging';
 import { Card, StatCard, Status } from '../../components/app/kit';
 import { FilterBar } from '../../components/app/FilterBar';
 import { Table } from '../../components/app/Table';
 import { Icon } from '../../components/Icon';
+import { CorrectionForm, CorrectionStatusChip, MyCorrections, type CorrectionTarget } from './Corrections';
 import './attendance.css';
 
 const hhmm = (time: string | null) => (time ? time.slice(0, 5) : '—');
@@ -163,15 +164,30 @@ function countAndTime(t: TFunction, count: number, minutes: number) {
 
 // ---------- one person ----------
 
-/** Attendance → My timesheet. */
+/**
+ * Attendance → My timesheet, with corrections: "Fix" on a day asks for its clock-in or clock-out to be corrected;
+ * My corrections lists the requests (the open one is in the URL as ?correction=, so notifications can link to it).
+ */
 export function MyTimesheet() {
   const filters = useUrlFilters([]);
   const { month, thisMonth, set } = useMonth(filters);
-  return <PersonSheet employeeId="me" month={month} thisMonth={thisMonth} onMonth={set} />;
+  const [form, setForm] = useState<CorrectionTarget | null>(null);
+  const openId = filters.param('correction');
+  return (
+    <div className="att-stack">
+      <PersonSheet employeeId="me" month={month} thisMonth={thisMonth} onMonth={set}
+        onFix={(day) => setForm({ day })} onOpenCorrection={(id) => filters.setParam('correction', id)} />
+      <MyCorrections openId={openId} onOpen={(id) => filters.setParam('correction', id)}
+        onEdit={(c: AttendanceCorrection) => setForm({ editing: c })} />
+      {form && <CorrectionForm target={form} onClose={() => setForm(null)} />}
+    </div>
+  );
 }
 
-function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack }: {
+function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack, onFix, onOpenCorrection }: {
   employeeId: string; month: string; thisMonth: string; onMonth: (m: string) => void; onBack?: () => void;
+  /** Your own timesheet: ask to correct a day, or open the request already made for it. */
+  onFix?: (day: TimesheetDay) => void; onOpenCorrection?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const sheet = useQuery({
@@ -229,6 +245,9 @@ function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack }: {
             { key: 'early', header: t('timesheet.leftEarly'), align: 'end', cell: (d) => (d.earlyMin ? t('timesheet.min', { n: d.earlyMin }) : '—'),
               cellClass: (d) => (d.earlyMin ? 'is-warning' : undefined) },
             { key: 'note', header: t('today.note'), cell: (d) => <DayNote day={d} /> },
+            ...(onFix ? [{ key: 'fix', header: t('correction.column'), cell: (d: TimesheetDay) => (
+              <FixCell day={d} onFix={() => onFix(d)} onOpen={() => d.correction && onOpenCorrection?.(d.correction.id)} />
+            ) }] : []),
           ]}
         />
       </Card>
@@ -263,9 +282,36 @@ function Sessions({ day: d }: { day: TimesheetDay }) {
   );
 }
 
+/** How far back a day can be corrected (the server's limit). */
+const CORRECTABLE_DAYS = 60;
+
+/** Waiting or sent back: the request (open it). Otherwise "Fix" (also to correct a day again), within the last 60 days. */
+function FixCell({ day: d, onFix, onOpen }: { day: TimesheetDay; onFix: () => void; onOpen: () => void }) {
+  const { t } = useTranslation();
+  const [oldest] = useState(() => addDays(isoDate(new Date()), -CORRECTABLE_DAYS));
+  const open = d.correction && (d.correction.status === 'PENDING' || d.correction.status === 'RETURNED');
+  if (open) {
+    return (
+      <button type="button" className="link-button" onClick={onOpen} aria-label={t('correction.openLabel')}>
+        <CorrectionStatusChip status={d.correction!.status} />
+      </button>
+    );
+  }
+  if (d.date < oldest) return <span className="muted">—</span>;
+  return (
+    <span className="ts-fix">
+      <button type="button" className="btn" onClick={onFix}
+        aria-label={t('correction.fixLabel', { date: formatDate(d.date, { weekday: 'long', day: 'numeric', month: 'long' }) })}>
+        {t('correction.fix')}
+      </button>
+    </span>
+  );
+}
+
 function DayNote({ day: d }: { day: TimesheetDay }) {
   const { t } = useTranslation();
   const parts = [
+    d.corrected && t('correction.corrected'),
     d.holiday,
     d.leaveType && (d.leavePart === 'AM' ? t('today.leaveAm', { type: d.leaveType })
       : d.leavePart === 'PM' ? t('today.leavePm', { type: d.leaveType }) : d.leaveType),

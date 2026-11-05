@@ -9,6 +9,7 @@ import { formatDays, formatRange, relative, toTone } from '../../lib/dates';
 import { moduleMeta } from '../../lib/modules';
 import { Glyph } from '../../components/Glyph';
 import { Card, EmptyState, List, PageHeader, Status } from '../../components/app/kit';
+import { CorrectionFacts } from '../attendance/Corrections';
 import { Panel } from '../../components/app/Panel';
 import { Pager } from '../../components/app/Pager';
 import { usePaging } from '../../lib/paging';
@@ -87,6 +88,7 @@ function useDecide(onDone?: () => void) {
       await queryClient.invalidateQueries({ queryKey: ['approvals'] });
       await queryClient.invalidateQueries({ queryKey: ['leave'] });
       await queryClient.invalidateQueries({ queryKey: ['claims'] });
+      await queryClient.invalidateQueries({ queryKey: ['attendance'] });
       onDone?.();
     },
   });
@@ -173,17 +175,23 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
     queryFn: () => api.claims.detail(item.subjectId),
     enabled: item.subjectType === 'CLAIM',
   });
+  const correction = useQuery({
+    queryKey: ['attendance', 'correction', item.subjectId],
+    queryFn: () => api.attendance.corrections.detail(item.subjectId),
+    enabled: item.subjectType === 'CORRECTION',
+  });
   const [comment, setComment] = useState('');
   const decide = useDecide(onClose);
   const r = detail.data?.request;
-  const timeline = detail.data?.timeline ?? claim.data?.timeline;
-  const loadError = detail.error ?? claim.error;
+  const timeline = detail.data?.timeline ?? claim.data?.timeline ?? correction.data?.timeline;
+  const loadError = detail.error ?? claim.error ?? correction.error;
   const b = balance.data?.find((x) => x.leaveTypeId === r?.leaveTypeId);
 
   return (
     <Panel title={item.title} onClose={onClose}>
       {loadError && <p className="form-error" role="alert">{errorText(loadError)}</p>}
       {claim.data && <ClaimFacts claim={claim.data.claim} showEmployee />}
+      {correction.data && <CorrectionFacts detail={correction.data} showEmployee />}
       {r && (
         <dl className="facts">
           <dt>{t('req.employee')}</dt><dd>{r.employeeName} ({item.requesterNo})</dd>

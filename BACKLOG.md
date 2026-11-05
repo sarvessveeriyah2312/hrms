@@ -11,7 +11,7 @@ Work deferred on purpose. Pick items from here when planning the next round. New
 
 ## Approval workflows (follow-ups)
 
-- [ ] **Use workflows for attendance corrections and overtime** when that module exists (claims are done; the engine and builder are generic: add the subject type and its conditions).
+- [ ] **Use workflows for overtime** when that module exists (claims and attendance corrections are done; the engine and builder are generic: add the subject type and its conditions).
 - [ ] **More conditions:** entity, employee role, half day vs full day.
 - [ ] **Parallel steps** ("any two of three approvers") and **conditional steps** inside one workflow.
 - [ ] **Reassign a stuck step** when an approver has left; admin view of all requests in progress.

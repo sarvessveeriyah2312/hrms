@@ -174,6 +174,10 @@ public class ApprovalFlows {
     private void validate(String subjectType, FlowInput in) {
         boolean claim = "CLAIM".equals(subjectType);
         String unit = claim ? "amount" : "days";
+        if ("CORRECTION".equals(subjectType)
+            && ((in.typeIds() != null && !in.typeIds().isEmpty()) || in.minQuantity() != null || in.maxQuantity() != null)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_CONDITION", "Correction workflows can only be matched by department.");
+        }
         if (in.steps() == null || in.steps().isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "STEPS_REQUIRED", "Add at least one approval step.");
         }

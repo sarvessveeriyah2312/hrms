@@ -39,13 +39,14 @@ function toInput(f: ApprovalFlow): ApprovalFlowInput {
 function useTypeNames(subject: FlowSubject) {
   const leave = useQuery({ queryKey: ['leave', 'settings', 'types'], queryFn: api.leave.settings.types, enabled: subject === 'LEAVE' });
   const claims = useQuery({ queryKey: ['claims', 'settings', 'types'], queryFn: api.claims.settings.types, enabled: subject === 'CLAIM' });
-  const list = subject === 'CLAIM' ? claims.data : leave.data;
+  const list = subject === 'CLAIM' ? claims.data : subject === 'LEAVE' ? leave.data : [];
   return new Map((list ?? []).map((x) => [x.id, x.name]));
 }
 
 /** "Amount 100–500", "5+ days": a workflow's quantity condition in words. */
 function quantityText(subject: FlowSubject, min: number | null, max: number | null) {
   const t = i18n.t;
+  if (subject === 'CORRECTION') return null;
   if (subject === 'CLAIM') {
     const n = (v: number) => Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
     return min !== null && max !== null ? t('fb.amountRange', { min: n(min), max: n(max) })
@@ -109,8 +110,9 @@ export function FlowList({ subject, flows, selectedId, onSelect, onNew }: {
       <div className="fl-list__foot">
         <button type="button" className="btn small" onClick={onNew}><Icon name="plus" size={14} />{t('wf.new')}</button>
         <div className="fl-fallback">
-          <Glyph icon={subject === 'CLAIM' ? 'receipt' : 'calendar'} tone={subject === 'CLAIM' ? 'orange' : 'teal'} size="sm" />
-          <span>{subject === 'CLAIM' ? t('fb.fallbackClaim') : t('fb.fallback')}</span>
+          <Glyph icon={subject === 'CLAIM' ? 'receipt' : subject === 'CORRECTION' ? 'clock' : 'calendar'}
+            tone={subject === 'CLAIM' ? 'orange' : subject === 'CORRECTION' ? 'blue' : 'teal'} size="sm" />
+          <span>{subject === 'CLAIM' ? t('fb.fallbackClaim') : subject === 'CORRECTION' ? t('fb.fallbackCorrection') : t('fb.fallback')}</span>
         </div>
       </div>
     </Card>
@@ -266,26 +268,30 @@ function TriggerCard({ subject, input, set, open, onToggle, typeNames, deptNames
     set(key, input[key].includes(id) ? input[key].filter((x) => x !== id) : [...input[key], id]);
   const num = (v: string) => (v === '' ? null : Number(v));
   const claim = subject === 'CLAIM';
+  // Corrections have no types or quantities: they're matched by department only.
+  const correction = subject === 'CORRECTION';
   const summary = [
-    input.typeIds.length
-      ? input.typeIds.map((id) => typeNames.get(id) ?? (claim ? t('nav.claims') : t('nav.leave'))).join(', ')
-      : claim ? t('fb.anyClaimType') : t('fb.anyType'),
+    correction ? t('fb.anyCorrection')
+      : input.typeIds.length
+        ? input.typeIds.map((id) => typeNames.get(id) ?? (claim ? t('nav.claims') : t('nav.leave'))).join(', ')
+        : claim ? t('fb.anyClaimType') : t('fb.anyType'),
     quantityText(subject, input.minQuantity, input.maxQuantity),
     input.departmentIds.length ? input.departmentIds.map((id) => deptNames.get(id) ?? t('reports.department')).join(', ') : t('fb.allDepts'),
-  ];
+  ].filter(Boolean);
 
   return (
     <div className={open ? 'fb-card fb-card--trigger is-open' : 'fb-card fb-card--trigger'}>
       <button type="button" className="fb-card__head" onClick={onToggle} aria-expanded={open}>
         <span className="fb-card__icon fb-card__icon--trigger" aria-hidden="true"><Icon name="inbox" size={16} /></span>
         <span className="fb-card__text">
-          <span className="fb-card__eyebrow">{claim ? t('fb.whenClaim') : t('fb.when')}</span>
+          <span className="fb-card__eyebrow">{claim ? t('fb.whenClaim') : correction ? t('fb.whenCorrection') : t('fb.when')}</span>
           <span className="fb-card__title">{summary.join(' · ')}</span>
         </span>
         <span className="fb-card__edit">{open ? t('users.done') : t('common.edit')}</span>
       </button>
       {open && (
         <div className="fb-card__body">
+          {!correction && <>
           <span className="wf-label">{claim ? t('claims.form.type') : t('leave.form.type')}</span>
           <div className="chip-picker" role="group" aria-label={claim ? t('cs.types') : t('ls.tabs.types')}>
             <label className={input.typeIds.length === 0 ? 'is-on' : undefined}>
@@ -297,6 +303,7 @@ function TriggerCard({ subject, input, set, open, onToggle, typeNames, deptNames
               </label>
             ))}
           </div>
+          </>}
           <span className="wf-label">{t('fb.deptOf')}</span>
           <div className="chip-picker" role="group" aria-label={t('users.departments')}>
             <label className={input.departmentIds.length === 0 ? 'is-on' : undefined}>
@@ -308,6 +315,7 @@ function TriggerCard({ subject, input, set, open, onToggle, typeNames, deptNames
               </label>
             ))}
           </div>
+          {!correction && <>
           <span className="wf-label">{claim ? t('fb.amount') : t('fb.length')}</span>
           <div className="fb-days">
             <label className="field">{t('fb.atLeast')}<input type="number" min={0} step={claim ? 0.01 : 0.5} inputMode="decimal" value={input.minQuantity ?? ''} onChange={(e) => set('minQuantity', num(e.target.value))} placeholder={t('fb.any')} /></label>
@@ -316,6 +324,7 @@ function TriggerCard({ subject, input, set, open, onToggle, typeNames, deptNames
             {!claim && <span className="hint">{t('fb.workingDays')}</span>}
           </div>
           {claim && <p className="hint">{t('fb.amountHint')}</p>}
+          </>}
         </div>
       )}
     </div>
