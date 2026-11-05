@@ -1,0 +1,25 @@
+/* Claims: monthly limit meters, the team filter bar and the HR payment list */
+.claims-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 4px 16px 10px; }
+
+.claim-limits { list-style: none; margin: 0; padding: 4px 16px 16px; display: grid; gap: 14px; }
+.claim-limits__head { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-bottom: 6px; }
+.claim-bar { height: 8px; border-radius: 999px; background: var(--app-canvas); box-shadow: inset 0 0 0 1px var(--color-border); overflow: hidden; }
+.claim-bar span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); }
+.claim-bar.is-full span { background: var(--color-danger-text); }
+
+.pay-list { padding-bottom: 0; }
+.pay-row { display: flex; align-items: stretch; }
+.pay-row.is-on { background: color-mix(in srgb, var(--color-primary) 7%, transparent); }
+.pay-row__check { display: flex; align-items: center; padding: 0 4px 0 16px; cursor: pointer; }
+.pay-row__body {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 16px 12px 8px;
+  background: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer;
+}
+.pay-row__body:hover { background: var(--app-hover); }
+.pay-bar {
+  position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px;
+  padding: 12px 16px; border-top: 1px solid var(--color-border); background: var(--color-surface);
+  border-radius: 0 0 inherit inherit;
+}
+.pay-bar > span { flex: 1 1 200px; }
+.pay-bar .input { flex: 1 1 180px; min-width: 0; }

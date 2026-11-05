@@ -101,7 +101,7 @@ public class ApprovalFlows {
     @Transactional
     Flow create(UUID actor, String subjectType, FlowInput in) {
         String name = requireName(in.name());
-        validate(in);
+        validate(subjectType, in);
         int position = jdbc.sql("select coalesce(max(position), -1) + 1 from approval_flow where subject_type = :type")
             .param("type", subjectType).query(Integer.class).single();
         UUID id = UUID.randomUUID();
@@ -127,7 +127,7 @@ public class ApprovalFlows {
     Flow update(UUID actor, UUID id, FlowInput in) {
         Flow existing = find(id);
         String name = requireName(in.name());
-        validate(in);
+        validate(existing.subjectType(), in);
         try {
             jdbc.sql("""
                     update approval_flow set name = :name, description = :desc, active = :active,
@@ -171,7 +171,9 @@ public class ApprovalFlows {
 
     // ---------- validation ----------
 
-    private void validate(FlowInput in) {
+    private void validate(String subjectType, FlowInput in) {
+        boolean claim = "CLAIM".equals(subjectType);
+        String unit = claim ? "amount" : "days";
         if (in.steps() == null || in.steps().isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "STEPS_REQUIRED", "Add at least one approval step.");
         }
@@ -179,10 +181,23 @@ public class ApprovalFlows {
             throw new ApiException(HttpStatus.BAD_REQUEST, "TOO_MANY_STEPS", "A workflow can have up to " + MAX_STEPS + " steps.");
         }
         if (in.minQuantity() != null && in.maxQuantity() != null && in.minQuantity().compareTo(in.maxQuantity()) > 0) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", "The minimum days is more than the maximum.");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", "The minimum " + unit + " is more than the maximum.");
         }
         if ((in.minQuantity() != null && in.minQuantity().signum() < 0) || (in.maxQuantity() != null && in.maxQuantity().signum() < 0)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", "Days can't be negative.");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", (claim ? "Amounts" : "Days") + " can't be negative.");
+        }
+        for (BigDecimal q : Arrays.asList(in.minQuantity(), in.maxQuantity())) {
+            if (q != null && (q.scale() > 2 || q.compareTo(new BigDecimal("9999999999")) > 0)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", claim
+                    ? "Use an amount with at most two decimal places." : "Use whole or half days.");
+            }
+        }
+        // Types are checked through RLS against the right table, so ids from another company or module count as missing.
+        String typeTable = claim ? "claim_type" : "leave_type";
+        for (UUID type : in.typeIds() == null ? List.<UUID>of() : in.typeIds()) {
+            if (!exists(typeTable, type)) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_TYPE", claim ? "One of the claim types doesn't exist." : "One of the leave types doesn't exist.");
+            }
         }
         for (Step s : in.steps()) {
             switch (s.kind() == null ? "" : s.kind()) {

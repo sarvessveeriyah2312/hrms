@@ -69,6 +69,13 @@ class AuthService {
         return start(user, rotated.token());
     }
 
+    /** A new access token for a signed-in user (after their details changed), keeping their refresh token. */
+    Session reissue(UUID userId, String refreshToken) {
+        var user = users.findById(userId).orElseThrow(AuthService::sessionExpired);
+        requireActive(user);
+        return start(user, refreshToken);
+    }
+
     void logout(String refreshToken) {
         refreshTokens.revoke(refreshToken);
     }

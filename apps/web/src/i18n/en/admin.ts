@@ -78,7 +78,8 @@ export const admin = {
       manage: { name: 'Edit employee records', description: 'Change job and personal details.' },
     },
     reports: {
-      view: { name: 'See reports', description: 'Attendance, leave and claim reports.' },
+      leave: { name: 'See leave reports', description: 'Leave balances and days taken.' },
+      claims: { name: 'See claims reports', description: 'Claims approved, waiting and paid.' },
     },
     workflow: {
       manage: { name: 'Manage approval workflows', description: 'Build approval workflows: who approves which requests, in what order.' },
@@ -94,6 +95,7 @@ export const admin = {
       details: 'The name people see, and the code they type at sign-in for {{name}}.',
       modules: 'Which parts of the app your company uses. Switching one off hides it for everyone.',
       departments: 'Add, rename and remove departments, and see who’s in each one.',
+      email: 'The email server HRMS uses to send password resets and other emails for your company.',
     },
     settings: 'Company settings',
     details: 'Details',

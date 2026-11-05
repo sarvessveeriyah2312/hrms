@@ -67,8 +67,15 @@ export function FileField({ label, required, current, onChange }: {
   );
 }
 
-/** Opens a request's document in a new tab. It's fetched with the session, so a plain link wouldn't work. */
-export function AttachmentButton({ requestId, file }: { requestId: string; file: FileMeta }) {
+/**
+ * Opens a request's document in a new tab. It's fetched with the session, so a plain link wouldn't work.
+ * `load` fetches it (default: a leave request's document); claims pass their receipt loader.
+ */
+export function AttachmentButton({ requestId, file, load = api.leave.attachment }: {
+  requestId: string;
+  file: FileMeta;
+  load?: (id: string) => Promise<Blob>;
+}) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,7 +85,7 @@ export function AttachmentButton({ requestId, file }: { requestId: string; file:
     // Open the tab first (inside the click) so pop-up blockers allow it, then point it at the file.
     const tab = window.open('', '_blank');
     try {
-      const blob = await api.leave.attachment(requestId);
+      const blob = await load(requestId);
       const url = URL.createObjectURL(blob);
       if (tab) tab.location.href = url;
       else window.location.href = url;

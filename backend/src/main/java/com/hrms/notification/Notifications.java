@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 public class Notifications {
 
     public enum Kind {
-        APPROVAL_WAITING, REQUEST_APPROVED, REQUEST_REJECTED, REQUEST_RETURNED, REQUEST_CANCELLED, LEAVE_RECORDED
+        APPROVAL_WAITING, REQUEST_APPROVED, REQUEST_REJECTED, REQUEST_RETURNED, REQUEST_CANCELLED, LEAVE_RECORDED, CLAIM_PAID
     }
 
     public record Message(Kind kind, String title, String body, String link, String tone) {

@@ -3,6 +3,7 @@ package com.hrms.leave;
 import com.hrms.shared.security.DataScope;
 import com.hrms.shared.security.EmployeeScope;
 import com.hrms.shared.security.PermissionChecker;
+import com.hrms.shared.web.ApiException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -14,6 +15,7 @@ import java.util.UUID;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -27,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Leave report: for each person and leave type, entitled, carried, taken, waiting and left, plus totals.
- * Who appears follows the scope of reports:view (team, department, entity or company); the reports module
+ * Who appears follows the scope of reports:leave (team, department, entity or company); the reports module
  * must be switched on for the permission to be in the token at all.
  */
 @RestController
@@ -56,14 +58,14 @@ class LeaveReportController {
     }
 
     @GetMapping
-    @PreAuthorize("@perm.has('reports:view')")
+    @PreAuthorize("@perm.has('reports:leave')")
     Report report(@RequestParam(required = false) Integer year, @RequestParam(required = false) UUID departmentId,
                   @RequestParam(required = false) UUID leaveTypeId, @AuthenticationPrincipal Jwt jwt) {
         return build(year, departmentId, leaveTypeId, jwt);
     }
 
     @GetMapping(value = "/csv", produces = "text/csv")
-    @PreAuthorize("@perm.has('reports:view')")
+    @PreAuthorize("@perm.has('reports:leave')")
     ResponseEntity<byte[]> csv(@RequestParam(required = false) Integer year, @RequestParam(required = false) UUID departmentId,
                                @RequestParam(required = false) UUID leaveTypeId, @AuthenticationPrincipal Jwt jwt) {
         Report r = build(year, departmentId, leaveTypeId, jwt);
@@ -81,8 +83,12 @@ class LeaveReportController {
     }
 
     private Report build(Integer yearParam, UUID departmentId, UUID leaveTypeId, Jwt jwt) {
+        List<String> modules = jwt.getClaimAsStringList("modules");
+        if (modules == null || !modules.contains("leave")) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "MODULE_OFF", "Your company hasn't switched on Leave.");
+        }
         int year = yearParam == null ? LocalDate.now().getYear() : yearParam;
-        DataScope scope = perm.scopeOf("reports:view").orElse(DataScope.TEAM);
+        DataScope scope = perm.scopeOf("reports:leave").orElse(DataScope.TEAM);
         String me = jwt.getClaimAsString("employee_id");
         record Person(UUID id, String employeeNo, String fullName, String department) {
         }

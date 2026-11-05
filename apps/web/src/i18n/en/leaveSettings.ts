@@ -53,7 +53,8 @@ export const leaveSettings = {
     retire: 'Retire this type (nobody can apply for it; past leave stays)',
   },
   ent: {
-    search: 'Search name or number',
+    search: 'Search name, number, department or manager',
+    matches_one: '{{count}} of {{total}} matches', matches_other: '{{count}} of {{total}} match',
     noMatch: 'No one matches “{{q}}”.',
     choose: 'Choose a person',
     chooseBody: 'See how each of their leave balances is worked out, and set a different figure when their contract says so. Leave a field empty to use the rules.',

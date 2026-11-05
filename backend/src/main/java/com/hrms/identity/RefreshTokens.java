@@ -84,6 +84,15 @@ class RefreshTokens {
             .update();
     }
 
+    /** Signs the user out everywhere except the session holding {@code keep} (may be null: then everywhere). */
+    void revokeAllExcept(UUID userId, String keep) {
+        jdbc.sql("""
+                update refresh_token set revoked_at = now()
+                where user_id = :user and revoked_at is null and token_hash <> :keep""")
+            .param("user", userId).param("keep", keep == null || keep.isBlank() ? "" : hash(keep))
+            .update();
+    }
+
     void revokeAll(UUID userId) {
         jdbc.sql("update refresh_token set revoked_at = now() where user_id = :user and revoked_at is null")
             .param("user", userId)

@@ -7,6 +7,8 @@ import { errorText } from '../../lib/access';
 import { formatDate, toTone } from '../../lib/dates';
 import { Glyph } from '../../components/Glyph';
 import { Avatar, Card, EmptyState, List, Status } from '../../components/app/kit';
+import { Pager } from '../../components/app/Pager';
+import { usePaging } from '../../lib/paging';
 import { YearEndCard } from './YearEndCard';
 
 function n(v: number | null | undefined) {
@@ -25,21 +27,29 @@ export function EntitlementsTab({ types }: { types: LeaveType[] }) {
   const [q, setQ] = useState('');
   const [employeeId, setEmployeeId] = useState<string | null>(null);
   const people = useQuery({ queryKey: ['employees', ''], queryFn: () => api.employees() });
-  const shown = (people.data?.employees ?? []).filter((e) =>
-    !q || e.fullName.toLowerCase().includes(q.toLowerCase()) || e.employeeNo.toLowerCase().includes(q.toLowerCase()));
+  // Matches name, employee number, department, manager or email; every word typed must match somewhere.
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const shown = (people.data?.employees ?? []).filter((e) => {
+    const text = [e.fullName, e.employeeNo, e.department, e.manager, e.email].filter(Boolean).join(' ').toLowerCase();
+    return words.every((w) => text.includes(w));
+  });
+  const paging = usePaging(shown, { pageSize: 10, resetKey: q.trim().toLowerCase() });
   const person = people.data?.employees.find((e) => e.id === employeeId);
 
   return (
     <div className="ent-layout">
       <div className="col">
         <Card title={t('nav.people')} count={people.data?.employees.length}>
-          <div className="card-pad">
+          <div className="card-pad ent-search-row">
             <input className="search-input ent-search" type="search" value={q} onChange={(e) => setQ(e.target.value)}
               placeholder={t('ent.search')} aria-label={t('shell.searchPeople')} />
+            {words.length > 0 && people.data && (
+              <span className="hint" aria-live="polite">{t('ent.matches', { count: shown.length, total: people.data.employees.length })}</span>
+            )}
           </div>
           {people.isError && <p className="form-error card-pad" role="alert">{errorText(people.error)}</p>}
           <List>
-            {shown.map((e) => (
+            {paging.visible.map((e) => (
               <li key={e.id}>
                 <button type="button" className={e.id === employeeId ? 'ui-row ui-row--link is-selected' : 'ui-row ui-row--link'}
                   aria-current={e.id === employeeId} onClick={() => setEmployeeId(e.id)}>
@@ -53,6 +63,7 @@ export function EntitlementsTab({ types }: { types: LeaveType[] }) {
             ))}
             {people.data && shown.length === 0 && <li className="ui-row hint">{t('ent.noMatch', { q })}</li>}
           </List>
+          <Pager {...paging} label={t('nav.people')} pageSizes={[10, 25, 50]} />
         </Card>
         <YearEndCard types={types} />
       </div>

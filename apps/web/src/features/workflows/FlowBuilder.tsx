@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
 import { roleText } from '../../lib/modules';
-import type { AdminRole, ApprovalFlow, ApprovalFlowInput, EmployeeSummary, FlowStep, FlowStepKind } from '@hrms/api-client';
+import type { AdminRole, ApprovalFlow, ApprovalFlowInput, EmployeeSummary, FlowStep, FlowStepKind, FlowSubject } from '@hrms/api-client';
 import { api } from '../../lib/api';
 import { errorText } from '../../lib/access';
 import { Glyph, type Tone } from '../../components/Glyph';
@@ -35,15 +35,35 @@ function toInput(f: ApprovalFlow): ApprovalFlowInput {
     steps: f.steps.map((s) => ({ ...s })) };
 }
 
+/** Leave or claim types, as id → name, for the trigger card. */
+function useTypeNames(subject: FlowSubject) {
+  const leave = useQuery({ queryKey: ['leave', 'settings', 'types'], queryFn: api.leave.settings.types, enabled: subject === 'LEAVE' });
+  const claims = useQuery({ queryKey: ['claims', 'settings', 'types'], queryFn: api.claims.settings.types, enabled: subject === 'CLAIM' });
+  const list = subject === 'CLAIM' ? claims.data : leave.data;
+  return new Map((list ?? []).map((x) => [x.id, x.name]));
+}
+
+/** "Amount 100–500", "5+ days": a workflow's quantity condition in words. */
+function quantityText(subject: FlowSubject, min: number | null, max: number | null) {
+  const t = i18n.t;
+  if (subject === 'CLAIM') {
+    const n = (v: number) => Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return min !== null && max !== null ? t('fb.amountRange', { min: n(min), max: n(max) })
+      : min !== null ? t('fb.amountMin', { min: n(min) }) : max !== null ? t('fb.amountMax', { max: n(max) }) : t('fb.anyAmount');
+  }
+  return min !== null && max !== null ? t('fb.daysRange', { min, max })
+    : min !== null ? t('fb.daysMin', { min }) : max !== null ? t('fb.daysMax', { max }) : t('fb.anyLength');
+}
+
 /** Left column: workflows in the order they're checked, with reordering. */
-export function FlowList({ flows, selectedId, onSelect, onNew }: {
-  flows: ApprovalFlow[]; selectedId: string | null; onSelect: (id: string) => void; onNew: () => void;
+export function FlowList({ subject, flows, selectedId, onSelect, onNew }: {
+  subject: FlowSubject; flows: ApprovalFlow[]; selectedId: string | null; onSelect: (id: string) => void; onNew: () => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const reorder = useMutation({
-    mutationFn: (order: string[]) => api.workflow.reorderFlows(order),
-    onSuccess: (data) => queryClient.setQueryData(['workflow', 'flows'], data),
+    mutationFn: (order: string[]) => api.workflow.reorderFlows(subject, order),
+    onSuccess: (data) => queryClient.setQueryData(['workflow', 'flows', subject], data),
   });
   const move = (index: number, delta: number) => {
     const order = flows.map((f) => f.id);
@@ -89,8 +109,8 @@ export function FlowList({ flows, selectedId, onSelect, onNew }: {
       <div className="fl-list__foot">
         <button type="button" className="btn small" onClick={onNew}><Icon name="plus" size={14} />{t('wf.new')}</button>
         <div className="fl-fallback">
-          <Glyph icon="calendar" tone="teal" size="sm" />
-          <span>{t('fb.fallback')}</span>
+          <Glyph icon={subject === 'CLAIM' ? 'receipt' : 'calendar'} tone={subject === 'CLAIM' ? 'orange' : 'teal'} size="sm" />
+          <span>{subject === 'CLAIM' ? t('fb.fallbackClaim') : t('fb.fallback')}</span>
         </div>
       </div>
     </Card>
@@ -98,10 +118,12 @@ export function FlowList({ flows, selectedId, onSelect, onNew }: {
 }
 
 /** Right column: the workflow as a flow of cards: the trigger, each approval step, then "Approved". */
-export function FlowEditor({ flow, onSaved, onDeleted }: { flow: ApprovalFlow | null; onSaved: (id: string) => void; onDeleted: () => void }) {
+export function FlowEditor({ subject, flow, onSaved, onDeleted }: {
+  subject: FlowSubject; flow: ApprovalFlow | null; onSaved: (id: string) => void; onDeleted: () => void;
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const types = useQuery({ queryKey: ['leave', 'settings', 'types'], queryFn: api.leave.settings.types });
+  const typeNames = useTypeNames(subject);
   const departments = useQuery({ queryKey: ['admin', 'departments'], queryFn: api.admin.departments });
   const roles = useQuery({ queryKey: ['admin', 'roles'], queryFn: api.admin.roles });
   const people = useQuery({ queryKey: ['employees', ''], queryFn: () => api.employees() });
@@ -114,7 +136,7 @@ export function FlowEditor({ flow, onSaved, onDeleted }: { flow: ApprovalFlow | 
     await queryClient.invalidateQueries({ queryKey: ['workflow'] });
   };
   const save = useMutation({
-    mutationFn: () => (flow ? api.workflow.updateFlow(flow.id, input) : api.workflow.createFlow(input)),
+    mutationFn: () => (flow ? api.workflow.updateFlow(flow.id, input) : api.workflow.createFlow(subject, input)),
     onSuccess: async (saved) => {
       await done();
       onSaved(saved.id);
@@ -173,11 +195,12 @@ export function FlowEditor({ flow, onSaved, onDeleted }: { flow: ApprovalFlow | 
         <ol className="fb-flow">
           <li>
             <TriggerCard
+              subject={subject}
               input={input}
               set={set}
               open={open === 'trigger'}
               onToggle={() => setOpen(open === 'trigger' ? null : 'trigger')}
-              typeNames={new Map((types.data ?? []).map((lt) => [lt.id, lt.name]))}
+              typeNames={typeNames}
               deptNames={new Map((departments.data ?? []).map((d) => [d.id, d.name]))}
             />
           </li>
@@ -229,7 +252,8 @@ function Connector({ onAdd }: { onAdd?: () => void }) {
   );
 }
 
-function TriggerCard({ input, set, open, onToggle, typeNames, deptNames }: {
+function TriggerCard({ subject, input, set, open, onToggle, typeNames, deptNames }: {
+  subject: FlowSubject;
   input: ApprovalFlowInput;
   set: <K extends keyof ApprovalFlowInput>(k: K, v: ApprovalFlowInput[K]) => void;
   open: boolean;
@@ -241,11 +265,12 @@ function TriggerCard({ input, set, open, onToggle, typeNames, deptNames }: {
   const toggleIn = (key: 'typeIds' | 'departmentIds', id: string) =>
     set(key, input[key].includes(id) ? input[key].filter((x) => x !== id) : [...input[key], id]);
   const num = (v: string) => (v === '' ? null : Number(v));
-  const days = input.minQuantity !== null && input.maxQuantity !== null ? t('fb.daysRange', { min: input.minQuantity, max: input.maxQuantity })
-    : input.minQuantity !== null ? t('fb.daysMin', { min: input.minQuantity }) : input.maxQuantity !== null ? t('fb.daysMax', { max: input.maxQuantity }) : t('fb.anyLength');
+  const claim = subject === 'CLAIM';
   const summary = [
-    input.typeIds.length ? input.typeIds.map((id) => typeNames.get(id) ?? t('nav.leave')).join(', ') : t('fb.anyType'),
-    days,
+    input.typeIds.length
+      ? input.typeIds.map((id) => typeNames.get(id) ?? (claim ? t('nav.claims') : t('nav.leave'))).join(', ')
+      : claim ? t('fb.anyClaimType') : t('fb.anyType'),
+    quantityText(subject, input.minQuantity, input.maxQuantity),
     input.departmentIds.length ? input.departmentIds.map((id) => deptNames.get(id) ?? t('reports.department')).join(', ') : t('fb.allDepts'),
   ];
 
@@ -254,17 +279,17 @@ function TriggerCard({ input, set, open, onToggle, typeNames, deptNames }: {
       <button type="button" className="fb-card__head" onClick={onToggle} aria-expanded={open}>
         <span className="fb-card__icon fb-card__icon--trigger" aria-hidden="true"><Icon name="inbox" size={16} /></span>
         <span className="fb-card__text">
-          <span className="fb-card__eyebrow">{t('fb.when')}</span>
+          <span className="fb-card__eyebrow">{claim ? t('fb.whenClaim') : t('fb.when')}</span>
           <span className="fb-card__title">{summary.join(' · ')}</span>
         </span>
         <span className="fb-card__edit">{open ? t('users.done') : t('common.edit')}</span>
       </button>
       {open && (
         <div className="fb-card__body">
-          <span className="wf-label">{t('leave.form.type')}</span>
-          <div className="chip-picker" role="group" aria-label={t('ls.tabs.types')}>
+          <span className="wf-label">{claim ? t('claims.form.type') : t('leave.form.type')}</span>
+          <div className="chip-picker" role="group" aria-label={claim ? t('cs.types') : t('ls.tabs.types')}>
             <label className={input.typeIds.length === 0 ? 'is-on' : undefined}>
-              <input type="checkbox" checked={input.typeIds.length === 0} onChange={() => set('typeIds', [])} />{t('reports.allTypes')}
+              <input type="checkbox" checked={input.typeIds.length === 0} onChange={() => set('typeIds', [])} />{claim ? t('fb.allClaimTypes') : t('reports.allTypes')}
             </label>
             {[...typeNames].map(([id, name]) => (
               <label key={id} className={input.typeIds.includes(id) ? 'is-on' : undefined}>
@@ -283,13 +308,14 @@ function TriggerCard({ input, set, open, onToggle, typeNames, deptNames }: {
               </label>
             ))}
           </div>
-          <span className="wf-label">{t('fb.length')}</span>
+          <span className="wf-label">{claim ? t('fb.amount') : t('fb.length')}</span>
           <div className="fb-days">
-            <label className="field">{t('fb.atLeast')}<input type="number" min={0} step={0.5} value={input.minQuantity ?? ''} onChange={(e) => set('minQuantity', num(e.target.value))} placeholder={t('fb.any')} /></label>
+            <label className="field">{t('fb.atLeast')}<input type="number" min={0} step={claim ? 0.01 : 0.5} inputMode="decimal" value={input.minQuantity ?? ''} onChange={(e) => set('minQuantity', num(e.target.value))} placeholder={t('fb.any')} /></label>
             <span className="hint">{t('fb.to')}</span>
-            <label className="field">{t('fb.atMost')}<input type="number" min={0} step={0.5} value={input.maxQuantity ?? ''} onChange={(e) => set('maxQuantity', num(e.target.value))} placeholder={t('fb.any')} /></label>
-            <span className="hint">{t('fb.workingDays')}</span>
+            <label className="field">{t('fb.atMost')}<input type="number" min={0} step={claim ? 0.01 : 0.5} inputMode="decimal" value={input.maxQuantity ?? ''} onChange={(e) => set('maxQuantity', num(e.target.value))} placeholder={t('fb.any')} /></label>
+            {!claim && <span className="hint">{t('fb.workingDays')}</span>}
           </div>
+          {claim && <p className="hint">{t('fb.amountHint')}</p>}
         </div>
       )}
     </div>

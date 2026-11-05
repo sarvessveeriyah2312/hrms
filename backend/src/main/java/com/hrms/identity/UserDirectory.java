@@ -23,12 +23,12 @@ import org.springframework.stereotype.Component;
 class UserDirectory {
 
     record UserRow(UUID id, UUID tenantId, String companyCode, String companyName, String tenantStatus,
-                   String email, String passwordHash, String status) {
+                   String email, String passwordHash, String status, boolean mustChangePassword) {
     }
 
     private static final String SELECT_USER = """
         select u.id, u.tenant_id, t.code::text as company_code, t.name as company_name, t.status as tenant_status,
-               u.email::text as email, u.password_hash, u.status
+               u.email::text as email, u.password_hash, u.status, u.must_change_password
         from app_user u join tenant t on t.id = u.tenant_id
         """;
 
@@ -108,7 +108,7 @@ class UserDirectory {
             return new AuthenticatedUser(user.id(), user.tenantId(), user.companyCode(), user.companyName(),
                 employee.map(EmployeeRow::id).orElse(null),
                 employee.map(EmployeeRow::fullName).orElse(null),
-                user.email(), roles, new LinkedHashMap<>(scopes), modules);
+                user.email(), roles, new LinkedHashMap<>(scopes), modules, user.mustChangePassword());
         } finally {
             previous.ifPresentOrElse(TenantContext::set, TenantContext::clear);
         }

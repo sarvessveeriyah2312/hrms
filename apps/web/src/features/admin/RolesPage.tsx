@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
+import { useOpenParam } from '../../lib/openParam';
 import { useTranslation } from 'react-i18next';
 import type { AdminRole, AdminRoleInput, CatalogModule, DataScope } from '@hrms/api-client';
 import { api, reloadSession } from '../../lib/api';
@@ -9,6 +10,7 @@ import { moduleMeta, moduleName, permText, roleText } from '../../lib/modules';
 import { Glyph } from '../../components/Glyph';
 import { Icon } from '../../components/Icon';
 import { Card, List, PageHeader, Status, Tabs } from '../../components/app/kit';
+import { Table } from '../../components/app/Table';
 import './admin.css';
 
 const LOCKED = 'SUPER_ADMIN';
@@ -21,13 +23,16 @@ export function RolesPage() {
   const [params, setParams] = useSearchParams();
   const roles = useQuery({ queryKey: ['admin', 'roles'], queryFn: api.admin.roles });
   const catalog = useQuery({ queryKey: ['admin', 'catalog'], queryFn: api.admin.catalog, staleTime: Infinity });
-  const [selected, setSelected] = useState<string | 'new' | null>(() => (params.get('new') ? 'new' : null));
+  const [picked, setSelected] = useState<string | 'new' | null>(() => (params.get('new') ? 'new' : null));
+  // Opened from search: /app/admin/roles?open=<role id>
+  const [openId] = useOpenParam();
+  const selected = openId ?? picked;
   const current = selected === 'new' ? null : roles.data?.find((r) => r.id === selected) ?? roles.data?.[0] ?? null;
 
   const tab: PageTab = (PAGE_TABS as readonly string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as PageTab) : 'roles';
   const select = (id: string | 'new' | null) => {
     setSelected(id);
-    if (params.get('new') || params.get('tab')) setParams({}, { replace: true });
+    if (params.get('new') || params.get('tab') || params.get('open')) setParams({}, { replace: true });
   };
 
   return (
@@ -89,54 +94,50 @@ export function RolesPage() {
   );
 }
 
+type PermRow = { module: CatalogModule; action: CatalogModule['actions'][number] };
+
 /** Read-only matrix: one row per permission, one column per role, showing how far each role reaches. */
 function CompareRoles({ roles, catalog, onOpen }: { roles: AdminRole[]; catalog: CatalogModule[]; onOpen: (id: string) => void }) {
   const { t } = useTranslation();
   const access = useAccess();
+  const rows: PermRow[] = catalog.flatMap((module) => module.actions.map((action) => ({ module, action })));
   return (
     <Card title={t('roles.compare')} count={roles.length}>
       <p className="muted card-pad">{t('roles.compareHint')}</p>
-      <div className="table-scroll">
-        <table className="report-table compare-table">
-          <thead>
-            <tr>
-              <th scope="col">{t('roles.permission')}</th>
-              {roles.map((r) => (
-                <th key={r.id} scope="col">
-                  <button type="button" className="link-button" onClick={() => onOpen(r.id)}>{roleText(r).name}</button>
-                  <small>{t('common.person', { count: r.userCount })}</small>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          {catalog.map((m) => {
-            const meta = moduleMeta(m.key);
-            const off = m.licensable && !access.hasModule(m.key);
-            return (
-              <tbody key={m.key}>
-                <tr className="compare-module">
-                  <th scope="rowgroup" colSpan={roles.length + 1}>
-                    <span className="compare-module__label"><Glyph icon={meta.icon} tone={meta.tone} size="sm" />{moduleName(m.key, m.name)}{off && <Status tone="grey">{t('roles.offForCompany')}</Status>}</span>
-                  </th>
-                </tr>
-                {m.actions.map((a) => (
-                  <tr key={a.key}>
-                    <th scope="row">{permText(m.key, a.key, a).name}<small>{permText(m.key, a.key, a).description}</small></th>
-                    {roles.map((r) => {
-                      const scope = r.permissions[`${m.key}:${a.key}`];
-                      return (
-                        <td key={r.id} className="compare-cell">
-                          {scope ? <span className={`scope-chip scope-chip--${scope.toLowerCase()}`} title={SCOPE_LABEL[scope]}>{t(`roles.short.${scope}`)}</span> : <span className="hint">—</span>}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            );
-          })}
-        </table>
-      </div>
+      <Table
+        label={t('roles.compare')}
+        className="compare-table"
+        rows={rows}
+        rowKey={(r) => `${r.module.key}:${r.action.key}`}
+        groupOf={(r) => {
+          const meta = moduleMeta(r.module.key);
+          const off = r.module.licensable && !access.hasModule(r.module.key);
+          return {
+            key: r.module.key,
+            label: <span className="compare-module__label"><Glyph icon={meta.icon} tone={meta.tone} size="sm" />{moduleName(r.module.key, r.module.name)}{off && <Status tone="grey">{t('roles.offForCompany')}</Status>}</span>,
+          };
+        }}
+        columns={[
+          {
+            key: 'permission', header: t('roles.permission'), rowHeader: true,
+            cell: (r) => {
+              const text = permText(r.module.key, r.action.key, r.action);
+              return <>{text.name}<small>{text.description}</small></>;
+            },
+          },
+          ...roles.map((role) => ({
+            key: role.id,
+            header: <><button type="button" className="link-button" onClick={() => onOpen(role.id)}>{roleText(role).name}</button><small>{t('common.person', { count: role.userCount })}</small></>,
+            cellClass: () => 'compare-cell',
+            cell: (r: PermRow) => {
+              const scope = role.permissions[`${r.module.key}:${r.action.key}`];
+              return scope
+                ? <span className={`scope-chip scope-chip--${scope.toLowerCase()}`} title={SCOPE_LABEL[scope]}>{t(`roles.short.${scope}`)}</span>
+                : <span className="hint">—</span>;
+            },
+          })),
+        ]}
+      />
     </Card>
   );
 }

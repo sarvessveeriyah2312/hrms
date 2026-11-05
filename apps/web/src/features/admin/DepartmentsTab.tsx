@@ -7,6 +7,7 @@ import { api } from '../../lib/api';
 import { errorText } from '../../lib/access';
 import { Icon } from '../../components/Icon';
 import { Avatar, Card, EmptyState, List, Row, Status } from '../../components/app/kit';
+import { useOpenParam } from '../../lib/openParam';
 
 const TONES = ['#DBEAFE', '#DCFCE7', '#FEF3C7', '#FCE7F3', '#EDE9FE', '#CFFAFE', '#FFE4E6'];
 const INK = ['#1D4ED8', '#15803D', '#B45309', '#BE185D', '#6D28D9', '#0E7490', '#BE123C'];
@@ -32,7 +33,14 @@ export function DepartmentsTab() {
   const queryClient = useQueryClient();
   const departments = useQuery({ queryKey: ['admin', 'departments'], queryFn: api.admin.departments });
   const [q, setQ] = useState('');
-  const [selected, setSelected] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+  // Opened from search: /app/admin/company?tab=departments&open=<department id>
+  const [openId, clearOpen] = useOpenParam();
+  const selected = openId ?? picked;
+  const setSelected = (id: string | null) => {
+    setPicked(id);
+    clearOpen();
+  };
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
+import { useOpenParam } from '../../lib/openParam';
 import { useTranslation } from 'react-i18next';
 import i18n, { dateLocale } from '../../i18n';
 import type { AdminRole, AdminUser, AdminUserInput, Department } from '@hrms/api-client';
@@ -36,11 +37,19 @@ export function UsersPage() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const [q, setQ] = useState('');
-  const [editing, setEditing] = useState<Editing | null>(() => (params.get('new') ? { mode: 'new' } : null));
+  const [editingState, setEditingState] = useState<Editing | null>(() => (params.get('new') ? { mode: 'new' } : null));
+  const [openId, clearOpen] = useOpenParam();
   const users = useQuery({ queryKey: ['admin', 'users', q], queryFn: () => api.admin.users(q) });
   const roles = useQuery({ queryKey: ['admin', 'roles'], queryFn: api.admin.roles });
   const departments = useQuery({ queryKey: ['admin', 'departments'], queryFn: api.admin.departments });
   const active = users.data?.filter((u) => u.status === 'ACTIVE').length ?? 0;
+  // Opened from search: /app/admin/users?open=<user id>
+  const linked = openId ? users.data?.find((u) => u.userId === openId) : undefined;
+  const editing: Editing | null = editingState ?? (linked ? { mode: 'edit', user: linked } : null);
+  const setEditing = (e: Editing | null) => {
+    setEditingState(e);
+    clearOpen();
+  };
 
   const close = () => {
     setEditing(null);

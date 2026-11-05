@@ -169,3 +169,7 @@
 @media (prefers-reduced-motion: reduce) {
   .fb-card, .fb-connector__add, .fl-item__move { transition: none; }
 }
+
+/* Leave / Claims switch above the tabs */
+.wf-subject { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 14px; }
+.wf-subject .wf-label { margin: 0; }

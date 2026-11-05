@@ -18,7 +18,7 @@ class MeController {
 
     record Me(String userId, String employeeId, String tenantId, String companyCode, String companyName,
               String name, String email, List<String> roles, List<String> permissions,
-              Map<String, Object> scopes, List<String> modules) {
+              Map<String, Object> scopes, List<String> modules, boolean mustChangePassword) {
     }
 
     @GetMapping
@@ -28,7 +28,8 @@ class MeController {
             jwt.getClaimAsString("company_code"), jwt.getClaimAsString("company_name"),
             jwt.getClaimAsString("name"), jwt.getClaimAsString("email"),
             orEmpty(jwt.getClaimAsStringList("roles")), orEmpty(jwt.getClaimAsStringList("perms")),
-            scopes == null ? Map.of() : scopes, orEmpty(jwt.getClaimAsStringList("modules")));
+            scopes == null ? Map.of() : scopes, orEmpty(jwt.getClaimAsStringList("modules")),
+            Boolean.TRUE.equals(jwt.getClaimAsBoolean("pwd_change")));
     }
 
     @GetMapping("/permissions")

@@ -68,6 +68,11 @@ export async function signIn(username: string, password: string, companyCode?: s
   start(await api.login(username, password, companyCode));
 }
 
+/** Uses a session the API just returned (e.g. after changing your password). */
+export function applySession(session: Session) {
+  start(session);
+}
+
 /** Re-reads permissions after an admin change (they're baked into the access token). */
 export function reloadSession() {
   return refreshSession();

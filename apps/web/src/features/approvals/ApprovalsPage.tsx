@@ -13,6 +13,7 @@ import { Panel } from '../../components/app/Panel';
 import { Timeline } from './Timeline';
 import { AttachmentButton } from '../../components/app/files';
 import { useInbox } from './useInbox';
+import { ClaimFacts } from '../claims/ClaimsPage';
 
 
 /** Approvals inbox: requests waiting for you, and (for company-wide approvers) ones you may step in on. */
@@ -77,6 +78,7 @@ function useDecide(onDone?: () => void) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['approvals'] });
       await queryClient.invalidateQueries({ queryKey: ['leave'] });
+      await queryClient.invalidateQueries({ queryKey: ['claims'] });
       onDone?.();
     },
   });
@@ -158,14 +160,22 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
     queryFn: () => api.leave.balances(detail.data!.request.employeeId),
     enabled: !!detail.data,
   });
+  const claim = useQuery({
+    queryKey: ['claims', 'detail', item.subjectId],
+    queryFn: () => api.claims.detail(item.subjectId),
+    enabled: item.subjectType === 'CLAIM',
+  });
   const [comment, setComment] = useState('');
   const decide = useDecide(onClose);
   const r = detail.data?.request;
+  const timeline = detail.data?.timeline ?? claim.data?.timeline;
+  const loadError = detail.error ?? claim.error;
   const b = balance.data?.find((x) => x.leaveTypeId === r?.leaveTypeId);
 
   return (
     <Panel title={item.title} onClose={onClose}>
-      {detail.isError && <p className="form-error" role="alert">{errorText(detail.error)}</p>}
+      {loadError && <p className="form-error" role="alert">{errorText(loadError)}</p>}
+      {claim.data && <ClaimFacts claim={claim.data.claim} showEmployee />}
       {r && (
         <dl className="facts">
           <dt>{t('req.employee')}</dt><dd>{r.employeeName} ({item.requesterNo})</dd>
@@ -177,10 +187,10 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
           <dt>{t('req.submitted')}</dt><dd>{relative(r.createdAt)}</dd>
         </dl>
       )}
-      {detail.data && (
+      {timeline && (
         <section className="stack">
           <h3 className="panel-subhead">{t('req.chain')}</h3>
-          <Timeline steps={detail.data.timeline} />
+          <Timeline steps={timeline} />
         </section>
       )}
       <form

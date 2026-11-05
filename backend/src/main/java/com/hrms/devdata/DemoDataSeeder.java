@@ -130,7 +130,8 @@ class DemoDataSeeder implements ApplicationRunner {
                     }
                     p.put("employee:view", DataScope.TENANT);
                     p.put("employee:manage", DataScope.TENANT);
-                    p.put("reports:view", DataScope.TENANT);
+                    p.put("reports:leave", DataScope.TENANT);
+                    p.put("reports:claims", DataScope.TENANT);
                     p.put("admin:users", DataScope.TENANT);
                 }
                 case MANAGER -> {
@@ -140,7 +141,8 @@ class DemoDataSeeder implements ApplicationRunner {
                         p.put(m + ":approve", DataScope.TEAM);
                     }
                     p.put("employee:view", DataScope.TEAM);
-                    p.put("reports:view", DataScope.TEAM);
+                    p.put("reports:leave", DataScope.TEAM);
+                    p.put("reports:claims", DataScope.TEAM);
                 }
                 case EMPLOYEE -> {
                     selfService(p);

@@ -3,6 +3,8 @@ import { Navigate, Outlet, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { refreshSession, useSession } from '../lib/api';
 
+const CHANGE_PASSWORD = '/app/account/password';
+
 /** Guards the signed-in app. On first load it tries the refresh cookie before sending you to the login page. */
 export function RequireAuth() {
   const { t } = useTranslation();
@@ -19,6 +21,10 @@ export function RequireAuth() {
   if (session.status === 'signed-out') {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?next=${next}`} replace />;
+  }
+  // Signed in with a temporary password an admin set: choose your own before anything else.
+  if (session.user.mustChangePassword && location.pathname !== CHANGE_PASSWORD) {
+    return <Navigate to={CHANGE_PASSWORD} replace />;
   }
   return <Outlet />;
 }

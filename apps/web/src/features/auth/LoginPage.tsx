@@ -100,6 +100,7 @@ export function LoginPage() {
               {t('auth.password')}
               <input type="password" autoComplete="current-password" autoFocus={!!prefill.username} {...register('password')} />
               {formState.errors.password && <span className="error">{formState.errors.password.message}</span>}
+              <Link className="auth-forgot" to="/forgot-password">{t('password.forgotLink')}</Link>
             </label>
             {showCode || prefill.switchCompany ? (
               <label className="field">

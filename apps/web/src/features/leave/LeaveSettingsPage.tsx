@@ -6,6 +6,7 @@ import type { LeaveType, LeaveTypeInput } from '@hrms/api-client';
 import i18n from '../../i18n';
 import { api } from '../../lib/api';
 import { errorText } from '../../lib/access';
+import { useOpenParam } from '../../lib/openParam';
 import { monthName, toTone } from '../../lib/dates';
 import { Glyph, type Tone } from '../../components/Glyph';
 import { Icon } from '../../components/Icon';
@@ -32,7 +33,15 @@ export function LeaveSettingsPage() {
   const { t } = useTranslation();
   const types = useQuery({ queryKey: ['leave', 'settings', 'types'], queryFn: api.leave.settings.types });
   const holidays = useQuery({ queryKey: ['leave', 'settings', 'holidays'], queryFn: api.leave.settings.holidays });
-  const [editing, setEditing] = useState<LeaveType | 'new' | null>(null);
+  const [editingState, setEditingState] = useState<LeaveType | 'new' | null>(null);
+  // Opened from search: ?type=<leave type id>
+  const [typeParam, clearType] = useOpenParam('type');
+  const linked = typeParam ? types.data?.find((lt) => lt.id === typeParam) : undefined;
+  const editing = editingState ?? linked ?? null;
+  const setEditing = (e: LeaveType | 'new' | null) => {
+    setEditingState(e);
+    clearType();
+  };
   const [params, setParams] = useSearchParams();
   const tab: Tab = (TABS as readonly string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as Tab) : 'types';
   const [thisYear] = useState(() => String(new Date().getFullYear()));

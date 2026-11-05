@@ -16,6 +16,7 @@ const ICON: Record<AppNotification['kind'], IconName> = {
   REQUEST_RETURNED: 'switch',
   REQUEST_CANCELLED: 'close',
   LEAVE_RECORDED: 'calendar',
+  CLAIM_PAID: 'receipt',
 };
 
 /**

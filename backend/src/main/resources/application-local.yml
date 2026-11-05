@@ -2,6 +2,11 @@
 hrms:
   auth:
     cookie-secure: false   # the web app runs on http://localhost
+  mail:
+    allow-private-hosts: true   # lets a company use Mailpit on localhost:1025
+  secrets:
+    # Local only. Real environments must set HRMS_SECRET_KEY.
+    key: ${HRMS_SECRET_KEY:bG9jYWwtb25seS1kby1ub3QtdXNlLWluLXByb2R1Y3Q=}
   seed:
     enabled: true
     # Password for the demo users. Local only; never reuse it anywhere real.

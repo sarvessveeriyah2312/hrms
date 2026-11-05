@@ -1,6 +1,8 @@
 package com.hrms.workflow;
 
+import com.hrms.shared.web.ApiException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,10 +15,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Approval workflow settings. Needs workflow:manage (the Super admin role, unless given to others in Roles). */
+/**
+ * Approval workflow settings for leave ({@code subject=LEAVE}, the default) and claims ({@code subject=CLAIM}).
+ * Needs workflow:manage (the Super admin role, unless given to others in Roles).
+ */
 @RestController
 @RequestMapping("/api/v1/workflow/flows")
 class ApprovalFlowsController {
@@ -24,7 +30,7 @@ class ApprovalFlowsController {
     record Order(List<UUID> order) {
     }
 
-    private static final String LEAVE = "LEAVE";
+    private static final Set<String> SUBJECTS = Set.of("LEAVE", "CLAIM");
 
     private final ApprovalFlows flows;
 
@@ -36,17 +42,24 @@ class ApprovalFlowsController {
         return UUID.fromString(jwt.getSubject());
     }
 
+    private static String subject(String value) {
+        String s = value == null || value.isBlank() ? "LEAVE" : value.trim().toUpperCase();
+        if (!SUBJECTS.contains(s)) throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_SUBJECT", "Workflows are for LEAVE or CLAIM.");
+        return s;
+    }
+
     @GetMapping
     @PreAuthorize("@perm.has('workflow:manage')")
-    List<ApprovalFlows.Flow> list() {
-        return flows.list(LEAVE);
+    List<ApprovalFlows.Flow> list(@RequestParam(required = false) String subject) {
+        return flows.list(subject(subject));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("@perm.has('workflow:manage')")
-    ApprovalFlows.Flow create(@RequestBody ApprovalFlows.FlowInput in, @AuthenticationPrincipal Jwt jwt) {
-        return flows.create(actor(jwt), LEAVE, in);
+    ApprovalFlows.Flow create(@RequestParam(required = false) String subject, @RequestBody ApprovalFlows.FlowInput in,
+                              @AuthenticationPrincipal Jwt jwt) {
+        return flows.create(actor(jwt), subject(subject), in);
     }
 
     @PutMapping("/{id}")
@@ -64,7 +77,8 @@ class ApprovalFlowsController {
 
     @PutMapping("/order")
     @PreAuthorize("@perm.has('workflow:manage')")
-    List<ApprovalFlows.Flow> reorder(@RequestBody Order in, @AuthenticationPrincipal Jwt jwt) {
-        return flows.reorder(actor(jwt), LEAVE, in.order());
+    List<ApprovalFlows.Flow> reorder(@RequestParam(required = false) String subject, @RequestBody Order in,
+                                     @AuthenticationPrincipal Jwt jwt) {
+        return flows.reorder(actor(jwt), subject(subject), in.order());
     }
 }

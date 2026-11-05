@@ -82,6 +82,7 @@ class TokenService {
         if (user.employeeId() != null) claims.claim("employee_id", user.employeeId().toString());
         if (user.name() != null) claims.claim("name", user.name());
         if (user.email() != null) claims.claim("email", user.email());
+        if (user.mustChangePassword()) claims.claim("pwd_change", true);
 
         var header = JwsHeader.with(SignatureAlgorithm.RS256).keyId(key.getKeyID()).build();
         String token = encoder.encode(JwtEncoderParameters.from(header, claims.build())).getTokenValue();

@@ -51,6 +51,8 @@ export interface Me {
   scopes: Record<string, DataScope>;
   /** Modules this company has switched on (plus the always-on ones). */
   modules: string[];
+  /** Signed in with a temporary password an admin set: they must choose their own before using the app. */
+  mustChangePassword?: boolean;
 }
 
 /** Returned by login and refresh. The refresh token itself is an HttpOnly cookie, never in this body. */
@@ -328,17 +330,21 @@ export interface FlowStep {
   roleId?: string | null;
 }
 
+/** What a workflow is for. */
+export type FlowSubject = 'LEAVE' | 'CLAIM';
+
 export interface ApprovalFlow {
   id: string;
-  subjectType: 'LEAVE';
+  subjectType: FlowSubject;
   name: string;
   description: string | null;
   active: boolean;
   /** Checking order: the first active match wins. */
   position: number;
-  /** Empty means any. */
+  /** Leave types or claim types; empty means any. */
   typeIds: string[];
   departmentIds: string[];
+  /** Leave: working days. Claims: the claim amount (in the claimant's currency). */
   minQuantity: number | null;
   maxQuantity: number | null;
   steps: FlowStep[];
@@ -354,9 +360,16 @@ export interface ApprovalPreview {
   steps: { position: number; kind: FlowStepKind; approver: string; skipped: boolean; note: string }[];
 }
 
+export interface ClaimApprovalPreview {
+  workflow: string;
+  /** No configured workflow matched; the claim type's own approval setting is used. */
+  fromClaimType: boolean;
+  steps: ApprovalPreview['steps'];
+}
+
 export interface AppNotification {
   id: string;
-  kind: 'APPROVAL_WAITING' | 'REQUEST_APPROVED' | 'REQUEST_REJECTED' | 'REQUEST_RETURNED' | 'REQUEST_CANCELLED' | 'LEAVE_RECORDED';
+  kind: 'APPROVAL_WAITING' | 'REQUEST_APPROVED' | 'REQUEST_REJECTED' | 'REQUEST_RETURNED' | 'REQUEST_CANCELLED' | 'LEAVE_RECORDED' | 'CLAIM_PAID';
   title: string;
   body: string | null;
   /** Path inside the web app to open, e.g. /app/approvals?open=<id>. */
@@ -378,6 +391,209 @@ export interface LeaveReport {
 }
 
 export type LeaveTypeInput = Partial<Omit<LeaveType, 'id' | 'code'>> & { name: string };
+
+// ---------- claims ----------
+
+export type ClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED';
+/** RECEIPT: the amount is typed in from a receipt. MILEAGE: distance × the type's rate per km. */
+export type ClaimKind = 'RECEIPT' | 'MILEAGE';
+
+export interface ClaimType {
+  id: string;
+  code: string;
+  name: string;
+  tone: string;
+  kind: ClaimKind;
+  /** null: no limit. */
+  maxPerClaim: number | null;
+  /** Per person, by the month of the expense. null: no limit. */
+  maxPerMonth: number | null;
+  /** MILEAGE only. */
+  ratePerKm: number | null;
+  /** RECEIPT types: a photo or PDF of the receipt is needed. */
+  receiptRequired: boolean;
+  approvalLevels: number;
+  hrApproval: boolean;
+  active: boolean;
+}
+
+export type ClaimTypeInput = Omit<ClaimType, 'id' | 'code' | 'active'> & { active?: boolean };
+
+export interface Claim {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  employeeNo: string;
+  claimTypeId: string;
+  typeName: string;
+  tone: string;
+  kind: ClaimKind;
+  expenseDate: string;
+  description: string;
+  merchant: string | null;
+  amount: number;
+  /** ISO 4217, from the employee's legal entity. */
+  currency: string;
+  distanceKm: number | null;
+  routeFrom: string | null;
+  routeTo: string | null;
+  receipt: FileMeta | null;
+  status: ClaimStatus;
+  createdAt: string;
+  decidedAt: string | null;
+  workflowId: string | null;
+  pendingWith: { level: number; totalSteps: number; label: string; approver: string } | null;
+  canCancel: boolean;
+  canEdit: boolean;
+  returnedComment: string | null;
+  /** Set when HR marked the approved claim as paid. */
+  paidAt: string | null;
+  paidBy: string | null;
+  paymentRef: string | null;
+}
+
+export interface ClaimInput {
+  claimTypeId: string;
+  expenseDate: string;
+  description: string;
+  merchant?: string | null;
+  /** RECEIPT types. */
+  amount?: number | null;
+  /** MILEAGE types. */
+  distanceKm?: number | null;
+  routeFrom?: string | null;
+  routeTo?: string | null;
+  receiptId?: string | null;
+}
+
+export interface ClaimUsage {
+  claimTypeId: string;
+  name: string;
+  tone: string;
+  maxPerMonth: number | null;
+  approved: number;
+  pending: number;
+  /** null when the type has no monthly limit. */
+  left: number | null;
+}
+
+export type ClaimFilter = 'PENDING' | 'APPROVED' | 'UNPAID' | 'PAID' | 'REJECTED';
+
+/**
+ * Claims report: approved and waiting claims by expense date, within your reports scope. One row per person,
+ * claim type, currency and month; roll them up as needed. Amounts stay in each claimant's currency.
+ */
+export interface ClaimsReport {
+  year: number;
+  /** 1–12 when the report is for one month. */
+  month: number | null;
+  scope: DataScope;
+  rows: ClaimsReportRow[];
+}
+
+export interface ClaimsReportRow {
+  employeeId: string; employeeNo: string; employeeName: string; department: string | null;
+  claimTypeId: string; claimType: string; currency: string; month: number;
+  claims: number; approved: number; pending: number; paid: number; toPay: number;
+}
+
+// ---------- search ----------
+
+export type SearchKind = 'PERSON' | 'LEAVE' | 'CLAIM' | 'USER' | 'ROLE' | 'DEPARTMENT' | 'LEAVE_TYPE' | 'CLAIM_TYPE' | 'WORKFLOW' | 'HOLIDAY';
+
+/** One search result. Raw values (status, dates, amount) are formatted by the app in the reader's language. */
+export interface SearchHit {
+  kind: SearchKind;
+  id: string;
+  title: string;
+  /** Extra text that matched or helps tell results apart (number, department, description…). */
+  meta: string | null;
+  /** LEAVE/CLAIM: the request status (claims: PAID once paid). USER: ACTIVE/DISABLED. Types: RETIRED. WORKFLOW: OFF. */
+  status: string | null;
+  date: string | null;
+  endDate: string | null;
+  amount: number | null;
+  currency: string | null;
+  /** WORKFLOW: LEAVE or CLAIM. */
+  tag: string | null;
+  /** Path in the web app that opens it. */
+  link: string;
+}
+
+// ---------- attendance sites ----------
+
+/** GEOFENCE / WIFI prove someone is at the site; KIOSK is the site's shared tablet; SELFIE / FACE are extra checks. */
+export type ClockMethod = 'GEOFENCE' | 'WIFI' | 'KIOSK' | 'SELFIE' | 'FACE';
+/** With both geofence and Wi-Fi on: is either enough, or are both needed? */
+export type WifiMode = 'GPS_OR_WIFI' | 'GPS_AND_WIFI';
+
+export interface SiteWifi { bssid: string; ssid: string | null; label: string | null }
+
+export interface SiteSummary {
+  id: string; name: string; address: string | null; entity: string; active: boolean;
+  lat: number; lng: number; radiusM: number; methods: ClockMethod[]; wifiMode: WifiMode; wifiCount: number; people: number;
+}
+
+export interface SiteMember { employeeId: string; employeeNo: string; fullName: string; department: string | null; otherSites: string[] }
+
+export interface SiteDetail {
+  id: string; name: string; address: string | null; entityId: string; entity: string; active: boolean;
+  lat: number; lng: number; radiusM: number; methods: ClockMethod[]; wifiMode: WifiMode; remarksRequired: boolean;
+  wifi: SiteWifi[]; members: SiteMember[]; updatedAt: string;
+  /** People have clocked in here: it can be switched off but not deleted. */
+  hasPunches: boolean;
+}
+
+export interface SiteInput {
+  name: string; address?: string | null; entityId?: string | null; active: boolean; lat: number; lng: number; radiusM: number;
+  methods: ClockMethod[]; wifiMode: WifiMode; remarksRequired: boolean; wifi: SiteWifi[];
+}
+
+// ---------- company email (SMTP) ----------
+
+export type MailSecurity = 'NONE' | 'STARTTLS' | 'SSL';
+
+export interface MailSettings {
+  enabled: boolean;
+  host: string;
+  port: number;
+  security: MailSecurity;
+  username: string | null;
+  /** The password is never sent back; this says whether one is saved. */
+  passwordSet: boolean;
+  fromName: string | null;
+  fromEmail: string;
+  replyTo: string | null;
+  updatedAt: string;
+  updatedBy: string | null;
+  lastTestAt: string | null;
+  lastTestOk: boolean | null;
+  lastTestError: string | null;
+}
+
+export interface MailSettingsView {
+  /** null when the company hasn't set up its own server. */
+  settings: MailSettings | null;
+  /** Where the company's email goes now: its own server, the platform's, or the server log (not sent). */
+  route: 'COMPANY' | 'PLATFORM' | 'LOG';
+  /** False when the server has no secret key, so passwords can't be saved. */
+  canStorePasswords: boolean;
+  /** Local development: private hosts such as Mailpit on localhost:1025 are allowed. */
+  privateHostsAllowed: boolean;
+}
+
+export interface MailSettingsInput {
+  enabled: boolean;
+  host: string;
+  port: number;
+  security: MailSecurity;
+  username?: string | null;
+  /** undefined/null keeps the saved password, '' removes it. */
+  password?: string | null;
+  fromName?: string | null;
+  fromEmail: string;
+  replyTo?: string | null;
+}
 
 export class ApiError extends Error {
   readonly problem: Problem;
@@ -472,16 +688,33 @@ export function createApiClient(opts: ApiClientOptions) {
       request<Session>('POST', '/auth/login', { body: { username, password, companyCode }, auth: false }),
     refresh: () => request<Session>('POST', '/auth/refresh', { auth: false, headers: XHR_HEADER }),
     logout: () => request<void>('POST', '/auth/logout', { auth: false, headers: XHR_HEADER }),
+    password: {
+      /** Emails a reset link if an account matches. The answer is the same either way. */
+      forgot: (login: string, companyCode?: string) =>
+        request<void>('POST', '/auth/password/forgot', { body: { login, companyCode }, auth: false }),
+      /** Which account a reset link is for (email partly hidden), or RESET_LINK_INVALID. */
+      checkLink: (token: string) =>
+        request<{ companyName: string; email: string }>('POST', '/auth/password/reset/check', { body: { token }, auth: false }),
+      reset: (token: string, newPassword: string) =>
+        request<void>('POST', '/auth/password/reset', { body: { token, newPassword }, auth: false }),
+      /** Signed in: keeps this session, signs out the others, returns a fresh session. */
+      change: (currentPassword: string, newPassword: string) =>
+        request<Session>('POST', '/auth/password/change', { body: { currentPassword, newPassword } }),
+    },
     me: () => request<Me>('GET', '/me'),
     clock: (req: ClockRequest) => request<ClockResponse>('POST', '/punches', { body: req, idempotent: true }),
     workflow: {
-      flows: () => request<ApprovalFlow[]>('GET', '/workflow/flows'),
-      createFlow: (input: ApprovalFlowInput) => request<ApprovalFlow>('POST', '/workflow/flows', { body: input }),
+      flows: (subject: FlowSubject = 'LEAVE') => request<ApprovalFlow[]>('GET', `/workflow/flows${query({ subject })}`),
+      createFlow: (subject: FlowSubject, input: ApprovalFlowInput) =>
+        request<ApprovalFlow>('POST', `/workflow/flows${query({ subject })}`, { body: input }),
       updateFlow: (id: string, input: ApprovalFlowInput) => request<ApprovalFlow>('PUT', `/workflow/flows/${id}`, { body: input }),
       deleteFlow: (id: string) => request<void>('DELETE', `/workflow/flows/${id}`),
-      reorderFlows: (order: string[]) => request<ApprovalFlow[]>('PUT', '/workflow/flows/order', { body: { order } }),
+      reorderFlows: (subject: FlowSubject, order: string[]) =>
+        request<ApprovalFlow[]>('PUT', `/workflow/flows/order${query({ subject })}`, { body: { order } }),
       preview: (employeeId: string, leaveTypeId: string, days: number) =>
         request<ApprovalPreview>('GET', `/leave/settings/approval-preview${query({ employeeId, leaveTypeId, days })}`),
+      claimPreview: (employeeId: string, claimTypeId: string, amount: number) =>
+        request<ClaimApprovalPreview>('GET', `/claims/settings/approval-preview${query({ employeeId, claimTypeId, amount })}`),
     },
     notifications: {
       list: (limit = 30) => request<{ unread: number; items: AppNotification[] }>('GET', `/notifications?limit=${limit}`),
@@ -558,6 +791,45 @@ export function createApiClient(opts: ApiClientOptions) {
           request<{ entityId: string; name: string; workDays: number[] }[]>('PUT', `/leave/settings/work-week/${entityId}`, { body: { workDays } }),
       },
     },
+    /** Everything the signed-in person may see that matches (at least 2 characters), a few of each kind. */
+    search: (q: string) => request<{ query: string; hits: SearchHit[] }>('GET', `/search${query({ q })}`),
+    claims: {
+      types: () => request<ClaimType[]>('GET', '/claims/types'),
+      mine: (year?: number) => request<Claim[]>('GET', `/claims/mine${query({ year })}`),
+      usage: (month?: string) =>
+        request<{ currency: string; month: string; types: ClaimUsage[] }>('GET', `/claims/usage${query({ month })}`),
+      submit: (input: ClaimInput) => request<Claim>('POST', '/claims', { body: input }),
+      resubmit: (id: string, input: ClaimInput) => request<Claim>('PUT', `/claims/${id}`, { body: input }),
+      cancel: (id: string) => request<void>('POST', `/claims/${id}/cancel`),
+      detail: (id: string) => request<{ claim: Claim; timeline: TimelineStep[] }>('GET', `/claims/${id}`),
+      receipt: (id: string) => request<Blob>('GET', `/claims/${id}/receipt`, { blob: true }),
+      team: (q: { status?: ClaimFilter; from?: string; to?: string } = {}) =>
+        request<{ scope: DataScope; claims: Claim[] }>('GET', `/claims/team${query(q)}`),
+      pay: (claimIds: string[], reference?: string) =>
+        request<{ paid: number }>('POST', '/claims/pay', { body: { claimIds, reference } }),
+      exportCsv: (month: string) => request<Blob>('GET', `/claims/export${query({ month })}`, { blob: true }),
+      report: (q: { year?: number; month?: number; claimTypeId?: string } = {}) =>
+        request<ClaimsReport>('GET', `/claims/reports${query(q)}`),
+      reportCsv: (q: { year?: number; month?: number; claimTypeId?: string } = {}) =>
+        request<Blob>('GET', `/claims/reports/csv${query(q)}`, { blob: true }),
+      settings: {
+        types: () => request<ClaimType[]>('GET', '/claims/settings/types'),
+        createType: (input: ClaimTypeInput) => request<ClaimType>('POST', '/claims/settings/types', { body: input }),
+        updateType: (id: string, input: ClaimTypeInput) => request<ClaimType>('PUT', `/claims/settings/types/${id}`, { body: input }),
+      },
+    },
+    sites: {
+      list: () => request<SiteSummary[]>('GET', '/attendance/sites'),
+      entities: () => request<{ id: string; name: string }[]>('GET', '/attendance/sites/entities'),
+      get: (id: string) => request<SiteDetail>('GET', `/attendance/sites/${id}`),
+      create: (input: SiteInput) => request<SiteDetail>('POST', '/attendance/sites', { body: input }),
+      update: (id: string, input: SiteInput) => request<SiteDetail>('PUT', `/attendance/sites/${id}`, { body: input }),
+      remove: (id: string) => request<void>('DELETE', `/attendance/sites/${id}`),
+      addMembers: (id: string, employeeIds: string[]) =>
+        request<SiteMember[]>('POST', `/attendance/sites/${id}/members`, { body: { employeeIds } }),
+      removeMembers: (id: string, employeeIds: string[]) =>
+        request<SiteMember[]>('POST', `/attendance/sites/${id}/members/remove`, { body: { employeeIds } }),
+    },
     admin: {
       catalog: () => request<CatalogModule[]>('GET', '/admin/catalog'),
       users: (q?: string) => request<AdminUser[]>('GET', `/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`),
@@ -580,6 +852,14 @@ export function createApiClient(opts: ApiClientOptions) {
       renameDepartment: (id: string, name: string) => request<Department>('PUT', `/admin/departments/${id}`, { body: { name } }),
       deleteDepartment: (id: string) => request<void>('DELETE', `/admin/departments/${id}`),
       departmentMembers: (id: string) => request<DepartmentMember[]>('GET', `/admin/departments/${id}/members`),
+      mail: {
+        get: () => request<MailSettingsView>('GET', '/admin/company/mail'),
+        save: (input: MailSettingsInput) => request<MailSettingsView>('PUT', '/admin/company/mail', { body: input }),
+        remove: () => request<void>('DELETE', '/admin/company/mail'),
+        /** Sends a test through the settings in the form (empty password = the saved one). */
+        test: (settings: MailSettingsInput, to?: string) =>
+          request<{ ok: boolean; message: string; detail: string | null }>('POST', '/admin/company/mail/test', { body: { settings, to } }),
+      },
     },
   };
 }

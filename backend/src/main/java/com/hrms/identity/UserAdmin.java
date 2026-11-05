@@ -118,8 +118,8 @@ class UserAdmin {
         String temporary = temporaryPassword();
         try {
             jdbc.sql("""
-                    insert into app_user (id, tenant_id, email, phone, password_hash)
-                    values (:id, :tenant, cast(:email as citext), :phone, :hash)""")
+                    insert into app_user (id, tenant_id, email, phone, password_hash, must_change_password)
+                    values (:id, :tenant, cast(:email as citext), :phone, :hash, true)""")
                 .param("id", userId).param("tenant", tenant).param("email", email).param("phone", phone)
                 .param("hash", passwords.encode(temporary)).update();
             UUID entity = jdbc.sql("select id from legal_entity order by created_at limit 1").query(UUID.class).single();
@@ -203,7 +203,7 @@ class UserAdmin {
         // Resetting someone's password lets you sign in as them, so you must cover all of their access.
         requireCanAssign(actor, Set.of(), new HashSet<>(user.roleIds()));
         String temporary = temporaryPassword();
-        jdbc.sql("update app_user set password_hash = :hash where id = :id and tenant_id = :tenant")
+        jdbc.sql("update app_user set password_hash = :hash, must_change_password = true where id = :id and tenant_id = :tenant")
             .param("hash", passwords.encode(temporary)).param("id", userId).param("tenant", TenantContext.require()).update();
         refreshTokens.revokeAll(userId);
         audit.record(actor, "USER_PASSWORD_RESET", "user", userId, Map.of());

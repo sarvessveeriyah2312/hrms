@@ -49,7 +49,8 @@ public final class PermissionCatalog {
             new Action("view", "See employee records", "See names, departments and managers.", ANY),
             new Action("manage", "Edit employee records", "Change job and personal details.", EnumSet.of(DataScope.DEPARTMENT, DataScope.ENTITY, DataScope.TENANT)))),
         new Module("reports", "Reports", true, List.of(
-            new Action("view", "See reports", "Attendance, leave and claim reports.", OTHERS))),
+            new Action("leave", "See leave reports", "Leave balances and days taken.", OTHERS),
+            new Action("claims", "See claims reports", "Claims approved, waiting and paid.", OTHERS))),
         new Module("workflow", "Approval workflows", false, List.of(
             new Action("manage", "Manage approval workflows", "Build approval workflows: who approves which requests, in what order.", COMPANY))),
         new Module("admin", "Administration", false, List.of(

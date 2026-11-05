@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,27 +45,41 @@ class AuthController {
     /** Same shape as GET /me. */
     record UserView(UUID userId, UUID employeeId, UUID tenantId, String companyCode, String companyName,
                     String name, String email, List<String> roles, List<String> permissions,
-                    Map<String, String> scopes, List<String> modules) {
+                    Map<String, String> scopes, List<String> modules, boolean mustChangePassword) {
         static UserView of(AuthenticatedUser u) {
             Map<String, String> scopes = new java.util.LinkedHashMap<>();
             u.scopes().forEach((k, v) -> scopes.put(k, v.name()));
             return new UserView(u.userId(), u.employeeId(), u.tenantId(), u.companyCode(), u.companyName(),
-                u.name(), u.email(), u.roles(), u.permissions(), scopes, u.modules());
+                u.name(), u.email(), u.roles(), u.permissions(), scopes, u.modules(), u.mustChangePassword());
         }
     }
 
     record SessionResponse(String accessToken, long expiresIn, UserView user) {
     }
 
+    record ForgotRequest(@NotBlank @Size(max = 254) String login, @Size(max = 20) String companyCode) {
+    }
+
+    record TokenRequest(@NotBlank @Size(max = 100) String token) {
+    }
+
+    record ResetRequest(@NotBlank @Size(max = 100) String token, @NotBlank @Size(max = 200) String newPassword) {
+    }
+
+    record ChangeRequest(@NotBlank @Size(max = 200) String currentPassword, @NotBlank @Size(max = 200) String newPassword) {
+    }
+
     private final AuthService auth;
+    private final PasswordService passwords;
     private final TokenService tokens;
     private final boolean secureCookie;
     private final Duration cookieTtl;
 
-    AuthController(AuthService auth, TokenService tokens,
+    AuthController(AuthService auth, PasswordService passwords, TokenService tokens,
                    @Value("${hrms.auth.cookie-secure:true}") boolean secureCookie,
                    @Value("${hrms.auth.refresh-token-days:30}") long refreshDays) {
         this.auth = auth;
+        this.passwords = passwords;
         this.tokens = tokens;
         this.secureCookie = secureCookie;
         this.cookieTtl = Duration.ofDays(refreshDays);
@@ -98,6 +114,48 @@ class AuthController {
         requireXhr(requestedWith);
         if (token != null && !token.isBlank()) auth.logout(token);
         return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookie("", Duration.ZERO).toString()).build();
+    }
+
+    // ---------- passwords ----------
+
+    /** Emails a reset link if an account matches. Always 202 with no body, so it can't reveal who has an account. */
+    @PostMapping("/password/forgot")
+    ResponseEntity<Void> forgot(@Valid @RequestBody ForgotRequest req) {
+        passwords.requestReset(req.login(), req.companyCode());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** Whether a reset link still works, and which account it's for (email partly hidden). */
+    @PostMapping("/password/reset/check")
+    PasswordService.LinkInfo checkLink(@Valid @RequestBody TokenRequest req) {
+        return passwords.checkLink(req.token());
+    }
+
+    /** Sets a new password from a reset link. Signs the person out everywhere; they sign in again. */
+    @PostMapping("/password/reset")
+    ResponseEntity<Void> reset(@Valid @RequestBody ResetRequest req) {
+        passwords.resetWithLink(req.token(), req.newPassword());
+        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookie("", Duration.ZERO).toString()).build();
+    }
+
+    /**
+     * The signed-in person changes their password (access token required). This browser stays signed in, other
+     * sessions are signed out, and a fresh access token comes back (it no longer asks for a password change).
+     * Here rather than under /me because the session cookie is only sent to /api/v1/auth.
+     */
+    @PostMapping("/password/change")
+    ResponseEntity<SessionResponse> change(@Valid @RequestBody ChangeRequest req, @AuthenticationPrincipal Jwt jwt,
+                                           @CookieValue(name = COOKIE, required = false) String token) {
+        if (jwt == null) throw new ApiException(HttpStatus.UNAUTHORIZED, "NO_SESSION", "You're not signed in.");
+        UUID userId = UUID.fromString(jwt.getSubject());
+        passwords.change(userId, req.currentPassword(), req.newPassword(), token);
+        AuthService.Session s = auth.reissue(userId, token);
+        if (token == null || token.isBlank()) {
+            // No session cookie (e.g. the mobile app): just the new access token.
+            return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(new SessionResponse(s.access().token(), s.access().expiresInSeconds(), UserView.of(s.user())));
+        }
+        return session(s);
     }
 
     @GetMapping("/.well-known/jwks.json")

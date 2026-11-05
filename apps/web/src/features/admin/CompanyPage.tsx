@@ -8,12 +8,13 @@ import { errorText } from '../../lib/access';
 import { moduleMeta, moduleName } from '../../lib/modules';
 import { Card, PageHeader, Status, Tabs, Tile } from '../../components/app/kit';
 import { DepartmentsTab } from './DepartmentsTab';
+import { MailTab } from './MailTab';
 import './admin.css';
 
-const TABS = ['details', 'modules', 'departments'] as const;
+const TABS = ['details', 'modules', 'departments', 'email'] as const;
 type Tab = (typeof TABS)[number];
 
-/** Company settings in three tabs: details (name and sign-in code), modules, and departments. */
+/** Company settings in tabs: details (name and sign-in code), modules, departments, and email (SMTP server). */
 export function CompanyPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -46,6 +47,7 @@ export function CompanyPage() {
           { key: 'details', label: t('company.details'), icon: 'building' },
           { key: 'modules', label: t('shell.modules'), icon: 'sliders', count: company.data ? onCount : undefined },
           { key: 'departments', label: t('users.departments'), icon: 'users', count: departments.data?.length },
+          { key: 'email', label: t('mail.tab'), icon: 'message' },
         ]}
       >
         {tab === 'details' && company.data && (
@@ -86,6 +88,7 @@ export function CompanyPage() {
         )}
 
         {tab === 'departments' && <DepartmentsTab />}
+        {tab === 'email' && <MailTab />}
       </Tabs>
     </>
   );

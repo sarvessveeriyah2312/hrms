@@ -1,0 +1,44 @@
+import type { Shape } from '../shape';
+import type { misc as en } from '../en/misc';
+
+export const misc: Shape<typeof en> = {
+  people: {
+    scopeNote: {
+      SELF: '您可以查看自己的记录。',
+      TEAM: '您可以查看自己、直属下属，以及您担任代理审批人的员工。',
+      DEPARTMENT: '您可以查看本部门的所有人。',
+      ENTITY: '您可以查看本法律实体的所有人。',
+      TENANT: '您可以查看全公司的所有人。',
+    },
+    directory: '通讯录',
+    search: '搜索姓名或工号',
+    noMatch: '没有与“{{q}}”匹配的人',
+    noOne: '没有可显示的人员',
+    tryPart: '请尝试输入部分姓名或工号。',
+  },
+  reports: {
+    noneTitle: '暂无报表',
+    noneBody: '贵公司开启的模块的报表会显示在这里。',
+    subtitle: '您有权查看的员工的休假余额和已休天数。',
+    export: '导出 CSV', exporting: '正在导出…',
+    allTypes: '所有假期类型', department: '部门', allDepts: '所有部门', noDept: '无部门',
+    csvHint: 'CSV 导出包含您权限范围内的所有部门。',
+    byPerson: '按员工统计休假', person: '员工', carried: '结转', left: '剩余',
+    nobody: '在这些筛选条件下没有可显示的人员。',
+    filters: '报表筛选', searchPlaceholder: '搜索姓名、工号、部门或假期类型',
+    balance: '余额', balanceAny: '任意余额',
+    balanceOpt: { over: '已超出余额', low: '剩余少于 {{n}} 天', unused: '尚未休假', waiting: '有待审批天数' },
+    claims: {
+      subtitle: '按费用日期统计您可查看人员的已批准和待审批报销。',
+      searchPlaceholder: '搜索姓名、工号、部门或报销类型',
+      month: '月份', wholeYear: '全年',
+      show: '显示', showAny: '全部', showOpt: { toPay: '有待付款', waiting: '有待审批', paid: '有已付款' },
+      approved: '已批准', toPay: '待付款', claims: '报销笔数',
+      waitingNote: '尚未审批', toPayNote: '已批准，尚未标记付款',
+      byPerson: '按员工统计报销', byType: '按报销类型', byMonth: '按月份',
+      typeMeta: '{{claims}} 笔 · {{people}} 人',
+      none: '在这些筛选条件下没有报销。',
+      csvHint: 'CSV 按年份、月份和报销类型导出，包含您可查看的所有人员。',
+    },
+  },
+};
