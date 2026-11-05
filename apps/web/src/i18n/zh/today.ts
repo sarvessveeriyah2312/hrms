@@ -3,8 +3,7 @@ import type { today as en } from '../en/today';
 
 export const today: Shape<typeof en> = {
   today: {
-    title: '今天', titleOn: '{{date}}',
-    subtitle: '谁已到岗、迟到、尚未到岗、休假或休息。',
+    title: '今天',
     holiday: '公共假期：{{name}}',
     pickDay: '查看日期', backToToday: '回到今天',
     truncated: '仅显示前 {{n}} 人。如需查看所有人，请让 HR 缩小您的考勤查看范围。',

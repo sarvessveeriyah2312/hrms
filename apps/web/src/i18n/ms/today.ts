@@ -3,8 +3,7 @@ import type { today as en } from '../en/today';
 
 export const today: Shape<typeof en> = {
   today: {
-    title: 'Hari ini', titleOn: '{{date}}',
-    subtitle: 'Siapa yang hadir, lewat, belum masuk, bercuti atau tidak bekerja.',
+    title: 'Hari ini',
     holiday: 'Cuti umum: {{name}}',
     pickDay: 'Hari untuk dilihat', backToToday: 'Kembali ke hari ini',
     truncated: 'Menunjukkan {{n}} orang pertama. Minta HR skop kehadiran yang lebih kecil untuk melihat semua orang.',

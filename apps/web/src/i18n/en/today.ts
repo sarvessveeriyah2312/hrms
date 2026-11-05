@@ -1,8 +1,7 @@
 /** Attendance → Today: who's in, late, not in yet, on leave or off. */
 export const today = {
   today: {
-    title: 'Today', titleOn: '{{date}}',
-    subtitle: 'Who’s in, late, not in yet, on leave or off.',
+    title: 'Today',
     holiday: 'Public holiday: {{name}}',
     pickDay: 'Day to look at', backToToday: 'Back to today',
     truncated: 'Showing the first {{n}} people. Ask HR for a narrower attendance scope to see everyone.',

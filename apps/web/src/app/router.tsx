@@ -19,7 +19,7 @@ import { ClaimsPage } from '../features/claims/ClaimsPage';
 import { ClaimSettingsPage } from '../features/claims/ClaimSettingsPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { SitesPage } from '../features/attendance/SitesPage';
-import { AttendancePage } from '../features/attendance/TodayPage';
+import { AttendancePage } from '../features/attendance/AttendancePage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { ChangePasswordPage } from '../features/account/ChangePasswordPage';
 

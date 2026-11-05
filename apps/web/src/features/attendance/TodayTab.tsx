@@ -4,15 +4,14 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { DayStatus, TodayPerson } from '@hrms/api-client';
 import { api } from '../../lib/api';
-import { can, errorText, SCOPE_LABEL, useAccess } from '../../lib/access';
+import { errorText, SCOPE_LABEL } from '../../lib/access';
 import { formatDate, isoDate } from '../../lib/dates';
 import { useUrlFilters, type FilterDef } from '../../lib/filters';
 import { PAGE_SIZES } from '../../lib/paging';
-import { Card, PageHeader, StatCard, Status } from '../../components/app/kit';
+import { Card, StatCard, Status } from '../../components/app/kit';
 import { FilterBar } from '../../components/app/FilterBar';
 import { Table } from '../../components/app/Table';
-import { PlaceholderPage } from '../../app/PlaceholderPage';
-import './today.css';
+import './attendance.css';
 
 const STATUSES: DayStatus[] = ['IN', 'LATE', 'NOT_IN', 'ON_LEAVE', 'OFF'];
 const NO_SITE = 'none';
@@ -21,17 +20,11 @@ const RANK: Record<DayStatus, number> = { LATE: 1, NOT_IN: 2, IN: 3, ON_LEAVE: 4
 const rank = (p: TodayPerson) => (p.overdue ? 0 : RANK[p.status]);
 const hhmm = (time: string | null) => (time ? time.slice(0, 5) : '—');
 
-/** /app/attendance: Today for people who can see attendance; the rest (clock-in only) aren't built yet on the web. */
-export function AttendancePage() {
-  const { user } = useAccess();
-  return can(user, 'attendance:view') ? <TodayPage /> : <PlaceholderPage module="attendance" />;
-}
-
 /**
- * Attendance → Today (managers): who's in, late, not in yet, on leave or off, by site, within the attendance:view
+ * Attendance → Today tab (managers): who's in, late, not in yet, on leave or off, by site, within the attendance:view
  * scope. Refreshes every minute; an earlier day can be picked. Filters are in the URL.
  */
-export function TodayPage() {
+export function TodayTab() {
   const { t } = useTranslation();
   const [todayIso] = useState(() => isoDate(new Date()));
   const defs: FilterDef[] = [
@@ -81,20 +74,20 @@ export function TodayPage() {
 
   return (
     <>
-      <PageHeader
-        title={data && !data.isToday ? t('today.titleOn', { date: label }) : t('today.title')}
-        subtitle={data ? [data.isToday ? label : null, data.holiday && t('today.holiday', { name: data.holiday })].filter(Boolean).join(' · ') || t('today.subtitle') : t('today.subtitle')}
-        actions={
-          <div className="today-date">
-            <label className="field today-date__field">
-              <span className="sr-only">{t('today.pickDay')}</span>
-              <input type="date" className="input" value={date || todayIso} max={todayIso}
-                onChange={(e) => filters.setParam('date', !e.target.value || e.target.value === todayIso ? '' : e.target.value)} />
-            </label>
-            {date && <button type="button" className="btn" onClick={() => filters.setParam('date', '')}>{t('today.backToToday')}</button>}
-          </div>
-        }
-      />
+      <div className="att-toolbar">
+        <h2 className="att-toolbar__title">
+          {label || t('today.title')}
+          {data?.holiday && <span className="muted"> · {t('today.holiday', { name: data.holiday })}</span>}
+        </h2>
+        <div className="today-date">
+          <label className="field today-date__field">
+            <span className="sr-only">{t('today.pickDay')}</span>
+            <input type="date" className="input" value={date || todayIso} max={todayIso}
+              onChange={(e) => filters.setParam('date', !e.target.value || e.target.value === todayIso ? '' : e.target.value)} />
+          </label>
+          {date && <button type="button" className="btn" onClick={() => filters.setParam('date', '')}>{t('today.backToToday')}</button>}
+        </div>
+      </div>
       {today.isError && <p className="form-error" role="alert">{errorText(today.error)}</p>}
       {data?.truncated && <p className="notice" role="status">{t('today.truncated', { n: data.people.length })}</p>}
 
