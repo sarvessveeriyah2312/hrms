@@ -22,7 +22,7 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 - [x] **Clock-in rules on the server:** use the site's geofence and Wi-Fi; server time, not the phone's; reject mock locations the phone reports; remarks required if the site says so. · M
 - [x] **Today (web, managers):** who's in, late, not in yet, on leave or off, by site, within the attendance:view scope; merged with approved leave. · M
 - [x] **Timesheets:** each person's clock-ins by day, worked hours, late arrival, early leave and missed clock-outs; for yourself and your team. · M
-- [ ] **Attendance corrections** ("I forgot to clock out"): request with reason → approval workflows (new subject type) → timesheet updated. · M
+- [x] **Attendance corrections** ("I forgot to clock out"): request with reason → approval workflows (new subject type) → timesheet updated. · M
 - [ ] **Overtime requests** with rates (1.0×, 1.5×, 2.0×, 3.0×) and hours, through approval workflows; approvers can approve several at once. · M
 - [ ] **Attendance report** + "See attendance reports" permission (lateness, absence, hours, overtime by person and month), with filters and CSV. · M
 - [ ] **Lock a period** before payroll: HR locks a month so timesheets, corrections and overtime can't change; unlock with a reason. · S

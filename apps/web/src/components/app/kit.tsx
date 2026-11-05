@@ -107,7 +107,7 @@ export function StatCard({ icon, label, value, note, suffix }: {
   );
 }
 
-type StatusTone = 'blue' | 'green' | 'amber' | 'red' | 'grey';
+export type StatusTone = 'blue' | 'green' | 'amber' | 'red' | 'grey';
 
 /** Status with a dot and a word, never colour alone. */
 export function Status({ tone, children }: { tone: StatusTone; children: ReactNode }) {

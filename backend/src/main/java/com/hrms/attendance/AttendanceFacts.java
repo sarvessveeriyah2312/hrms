@@ -49,6 +49,10 @@ class AttendanceFacts {
     record Leave(UUID employeeId, LocalDate start, LocalDate end, DayStatus.LeavePart part, String type) {
     }
 
+    /** A correction request for one day; times are local. Only APPROVED ones change the day. */
+    record CorrectionRow(UUID id, UUID employeeId, LocalDate date, LocalTime clockIn, LocalTime clockOut, String status) {
+    }
+
     /** Approved leave on one day; morning and afternoon on the same day make a full day. */
     record LeaveOn(DayStatus.LeavePart part, String type) {
     }
@@ -145,6 +149,34 @@ class AttendanceFacts {
             .query((rs, i) -> new Leave(rs.getObject("employee_id", UUID.class), rs.getObject("start_date", LocalDate.class),
                 rs.getObject("end_date", LocalDate.class), DayStatus.LeavePart.valueOf(rs.getString("day_part")), rs.getString("name")))
             .list().stream().collect(Collectors.groupingBy(Leave::employeeId));
+    }
+
+    /** Correction requests in the range (not withdrawn), oldest first, by person. */
+    Map<UUID, List<CorrectionRow>> corrections(List<UUID> ids, LocalDate from, LocalDate to) {
+        if (ids.isEmpty()) return Map.of();
+        return jdbc.sql("""
+                select id, employee_id, work_date, clock_in, clock_out, status from attendance_correction
+                where employee_id in (:ids) and work_date between :from and :to and status <> 'CANCELLED'
+                order by created_at""")
+            .param("ids", ids).param("from", from).param("to", to)
+            .query((rs, i) -> new CorrectionRow(rs.getObject("id", UUID.class), rs.getObject("employee_id", UUID.class),
+                rs.getObject("work_date", LocalDate.class), rs.getObject("clock_in", LocalTime.class),
+                rs.getObject("clock_out", LocalTime.class), rs.getString("status")))
+            .list().stream().collect(Collectors.groupingBy(CorrectionRow::employeeId));
+    }
+
+    /** The approved correction that applies on a day (the latest), and the latest request of any status (to show). */
+    record CorrectionsOn(CorrectionRow applied, CorrectionRow latest) {
+    }
+
+    static CorrectionsOn correctionsOn(List<CorrectionRow> rows, LocalDate day) {
+        CorrectionRow applied = null, latest = null;
+        for (CorrectionRow c : rows == null ? List.<CorrectionRow>of() : rows) {
+            if (!c.date().equals(day)) continue;
+            latest = c;
+            if ("APPROVED".equals(c.status())) applied = c;
+        }
+        return new CorrectionsOn(applied, latest);
     }
 
     Map<LocalDate, String> holidays(LocalDate from, LocalDate to) {
