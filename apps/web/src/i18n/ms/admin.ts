@@ -62,6 +62,8 @@ export const admin: Shape<typeof en> = {
       view: { name: 'Lihat kehadiran', description: 'Lihat siapa yang hadir hari ini dan daftar masuk mereka.' },
       timesheets: { name: 'Lihat helaian masa', description: 'Hari setiap orang: jam bekerja, lewat, pulang awal, tidak daftar keluar.' },
       approve: { name: 'Luluskan pembetulan dan kerja lebih masa', description: 'Bertindak atas permohonan kehadiran.' },
+      rosters: { name: 'Lihat jadual tugas tapak', description: 'Jadual tugas yang diterbitkan bagi tapak mereka: siapa bertugas syif mana (nama dan masa sahaja).' },
+      roster: { name: 'Rancang jadual tugas', description: 'Rancang, terbitkan dan ubah syif untuk orang di tapak mereka.' },
       manage: { name: 'Urus peraturan kehadiran', description: 'Tapak, geopagar, Wi-Fi, peraturan lebih masa dan syif.' },
       lock: { name: 'Kunci tempoh kehadiran', description: 'Kunci sebulan sebelum gaji supaya lembaran masa, pembetulan dan lebih masa tidak boleh berubah; buka dengan sebab.' },
     },

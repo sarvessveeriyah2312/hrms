@@ -272,9 +272,9 @@ public class ApprovalFlows {
         boolean claim = "CLAIM".equals(subjectType);
         boolean overtime = "OVERTIME".equals(subjectType);
         String unit = claim ? "amount" : overtime ? "hours" : "days";
-        if ("CORRECTION".equals(subjectType)
+        if (("CORRECTION".equals(subjectType) || "SHIFT_CHANGE".equals(subjectType))
             && ((in.typeIds() != null && !in.typeIds().isEmpty()) || in.minQuantity() != null || in.maxQuantity() != null)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_CONDITION", "Correction workflows can only be matched by department.");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_CONDITION", "These workflows can only be matched by department.");
         }
         if (overtime && in.typeIds() != null && !in.typeIds().isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_CONDITION", "Overtime workflows are matched by department and hours only.");

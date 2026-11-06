@@ -46,7 +46,7 @@ function useTypeNames(subject: FlowSubject) {
 /** "Amount 100–500", "5+ days": a workflow's quantity condition in words. */
 function quantityText(subject: FlowSubject, min: number | null, max: number | null) {
   const t = i18n.t;
-  if (subject === 'CORRECTION') return null;
+  if (subject === 'CORRECTION' || subject === 'SHIFT_CHANGE') return null;
   if (subject === 'OVERTIME') {
     return min !== null && max !== null ? t('fb.hoursRange', { min, max })
       : min !== null ? t('fb.hoursMin', { min }) : max !== null ? t('fb.hoursMax', { max }) : t('fb.anyHours');
@@ -114,9 +114,9 @@ export function FlowList({ subject, flows, selectedId, onSelect, onNew }: {
       <div className="fl-list__foot">
         <button type="button" className="btn small" onClick={onNew}><Icon name="plus" size={14} />{t('wf.new')}</button>
         <div className="fl-fallback">
-          <Glyph icon={subject === 'CLAIM' ? 'receipt' : subject === 'CORRECTION' ? 'clock' : subject === 'OVERTIME' ? 'star' : 'calendar'}
-            tone={subject === 'CLAIM' ? 'orange' : subject === 'CORRECTION' ? 'blue' : subject === 'OVERTIME' ? 'purple' : 'teal'} size="sm" />
-          <span>{subject === 'CLAIM' ? t('fb.fallbackClaim') : subject === 'CORRECTION' ? t('fb.fallbackCorrection')
+          <Glyph icon={subject === 'CLAIM' ? 'receipt' : subject === 'CORRECTION' ? 'clock' : subject === 'OVERTIME' ? 'star' : subject === 'SHIFT_CHANGE' ? 'switch' : 'calendar'}
+            tone={subject === 'CLAIM' ? 'orange' : subject === 'CORRECTION' ? 'blue' : subject === 'OVERTIME' ? 'purple' : subject === 'SHIFT_CHANGE' ? 'pink' : 'teal'} size="sm" />
+          <span>{subject === 'CLAIM' ? t('fb.fallbackClaim') : subject === 'CORRECTION' || subject === 'SHIFT_CHANGE' ? t('fb.fallbackCorrection')
             : subject === 'OVERTIME' ? t('fb.fallbackOvertime') : t('fb.fallback')}</span>
         </div>
       </div>
@@ -274,10 +274,12 @@ function TriggerCard({ subject, input, set, open, onToggle, typeNames, deptNames
   const num = (v: string) => (v === '' ? null : Number(v));
   const claim = subject === 'CLAIM';
   // Corrections have no types or quantities: they're matched by department only. Overtime: department and hours.
-  const correction = subject === 'CORRECTION';
+  // Corrections and shift changes are matched by department only.
+  const shiftChange = subject === 'SHIFT_CHANGE';
+  const correction = subject === 'CORRECTION' || shiftChange;
   const overtime = subject === 'OVERTIME';
   const summary = [
-    correction ? t('fb.anyCorrection')
+    shiftChange ? t('fb.anyShiftChange') : correction ? t('fb.anyCorrection')
       : overtime ? t('fb.anyOvertime')
       : input.typeIds.length
         ? input.typeIds.map((id) => typeNames.get(id) ?? (claim ? t('nav.claims') : t('nav.leave'))).join(', ')
@@ -291,7 +293,7 @@ function TriggerCard({ subject, input, set, open, onToggle, typeNames, deptNames
       <button type="button" className="fb-card__head" onClick={onToggle} aria-expanded={open}>
         <span className="fb-card__icon fb-card__icon--trigger" aria-hidden="true"><Icon name="inbox" size={16} /></span>
         <span className="fb-card__text">
-          <span className="fb-card__eyebrow">{claim ? t('fb.whenClaim') : correction ? t('fb.whenCorrection') : overtime ? t('fb.whenOvertime') : t('fb.when')}</span>
+          <span className="fb-card__eyebrow">{claim ? t('fb.whenClaim') : shiftChange ? t('fb.whenShiftChange') : correction ? t('fb.whenCorrection') : overtime ? t('fb.whenOvertime') : t('fb.when')}</span>
           <span className="fb-card__title">{summary.join(' · ')}</span>
         </span>
         <span className="fb-card__edit">{open ? t('users.done') : t('common.edit')}</span>

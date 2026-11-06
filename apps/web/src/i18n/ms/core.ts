@@ -40,7 +40,7 @@ export const core: Shape<typeof en> = {
   nav: {
     dashboard: 'Papan pemuka', people: 'Kakitangan', attendance: 'Kehadiran', leave: 'Cuti', claims: 'Tuntutan', approvals: 'Kelulusan',
     reports: 'Laporan', settings: 'Tetapan', admin: 'Pentadbiran', users: 'Pengguna', roles: 'Peranan dan kebenaran', company: 'Syarikat',
-    sites: 'Tapak', overtimeRules: 'Peraturan lebih masa', leaveSettings: 'Tetapan cuti', claimSettings: 'Tetapan tuntutan', workflows: 'Aliran kelulusan',
+    sites: 'Tapak', rosters: 'Jadual tugas', overtimeRules: 'Peraturan lebih masa', leaveSettings: 'Tetapan cuti', claimSettings: 'Tetapan tuntutan', workflows: 'Aliran kelulusan',
   },
   site: {
     login: 'Log masuk', getStarted: 'Mulakan', navLabel: 'Laman', footerLabel: 'Kaki laman', privacy: 'Privasi',

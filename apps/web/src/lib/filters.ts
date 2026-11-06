@@ -48,5 +48,9 @@ export function useUrlFilters(defs: FilterDef[]) {
     /** Another URL value next to the filters (e.g. rows per page), kept in the shared link too. */
     param: (name: string) => params.get(name),
     setParam: (name: string, value: string | null) => update((next) => (value ? next.set(name, value) : next.delete(name))),
+    /** Several URL values at once (separate setParam calls would each start from the old URL and undo each other). */
+    setParams: (values: Record<string, string | null>) => update((next) => {
+      Object.entries(values).forEach(([name, value]) => (value ? next.set(name, value) : next.delete(name)));
+    }),
   };
 }

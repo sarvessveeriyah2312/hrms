@@ -37,13 +37,19 @@ class TimesheetService {
      * One day. Times are local to the person's legal entity. offReason: HOLIDAY or REST_DAY. overdue: not in and past
      * the expected time plus grace (overdueMin since the expected time); absent: overdue on a day that's over.
      * corrected: an approved correction changed the times; correction: the day's latest correction request, if any.
-     * overtimeMin: approved overtime on the day (any rate).
+     * overtimeMin: approved overtime on the day (any rate). shifts: the published shifts that day; with shifts the
+     * expected hours are theirs (first start to last end), and on a rostered week a day without shifts is a day off.
      */
     record Day(LocalDate date, DayStatus.Status status, boolean absent, String offReason, String holiday,
                String leaveType, DayStatus.LeavePart leavePart, UUID siteId, String site, LocalTime expectedIn,
                LocalTime expectedOut, List<WorkDay.Session> sessions, LocalTime firstIn, LocalTime lastOut,
                int workedMin, int lateMin, int earlyMin, boolean missedOut, boolean stillIn, boolean flagged,
-               boolean overdue, int overdueMin, boolean corrected, CorrectionRef correction, int overtimeMin) {
+               boolean overdue, int overdueMin, boolean corrected, CorrectionRef correction, int overtimeMin,
+               List<ShiftRef> shifts, int extraMin) {
+    }
+
+    /** breakMin: unpaid, so the shift's paid time is its length less the break. */
+    record ShiftRef(LocalTime start, LocalTime end, String code, int breakMin) {
     }
 
     /** A correction request on a day: status PENDING, APPROVED, REJECTED or RETURNED. */
@@ -91,7 +97,7 @@ class TimesheetService {
         List<Day> days = days(e, range[0], range[1], facts.punches(ids, range[0], range[1]).get(e.id()),
             facts.leave(ids, range[0], range[1]).get(e.id()), facts.holidays(range[0], range[1]), facts.sites(),
             facts.homeSites(ids).get(e.id()), facts.corrections(ids, range[0], range[1]).get(e.id()),
-            facts.approvedOvertime(ids, range[0], range[1]).get(e.id()));
+            facts.approvedOvertime(ids, range[0], range[1]).get(e.id()), facts.publishedShifts(ids, range[0], range[1]).get(e.id()));
         return new Sheet(e.id(), e.employeeNo(), e.fullName(), e.department(), range[0], range[1], days, totals(days));
     }
 
@@ -110,11 +116,12 @@ class TimesheetService {
         Map<UUID, UUID> home = facts.homeSites(ids);
         Map<UUID, List<CorrectionRow>> corrections = facts.corrections(ids, range[0], range[1]);
         Map<UUID, List<OvertimeRow>> overtime = facts.approvedOvertime(ids, range[0], range[1]);
+        Map<UUID, List<AttendanceFacts.ShiftRow>> shifts = facts.publishedShifts(ids, range[0], range[1]);
 
         List<Line> lines = new ArrayList<>(people.size());
         for (Emp e : people) {
             List<Day> days = days(e, range[0], range[1], punches.get(e.id()), leave.get(e.id()), holidays, sites, home.get(e.id()),
-                corrections.get(e.id()), overtime.get(e.id()));
+                corrections.get(e.id()), overtime.get(e.id()), shifts.get(e.id()));
             SiteRef site = sites.get(home.get(e.id()));
             lines.add(new Line(e.id(), e.employeeNo(), e.fullName(), e.department(), site == null ? null : site.name(), totals(days)));
         }
@@ -124,33 +131,40 @@ class TimesheetService {
     /** The person's days in the range, from the day they joined up to today in their time zone. */
     private List<Day> days(Emp e, LocalDate from, LocalDate to, List<PunchRow> punches, List<Leave> leave,
                            Map<LocalDate, String> holidays, Map<UUID, SiteRef> sites, UUID homeSite,
-                           List<CorrectionRow> corrections, List<OvertimeRow> overtime) {
+                           List<CorrectionRow> corrections, List<OvertimeRow> overtime, List<AttendanceFacts.ShiftRow> shifts) {
         LocalDateTime now = LocalDateTime.now(clock.withZone(e.zone()));
         LocalDate start = from.isBefore(e.joinDate()) ? e.joinDate() : from;
         LocalDate end = to.isAfter(now.toLocalDate()) ? now.toLocalDate() : to;
         List<Day> out = new ArrayList<>();
         for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
-            out.add(day(e, d, now, punches, leave, holidays.get(d), sites, homeSite, corrections, overtime));
+            out.add(day(e, d, now, punches, leave, holidays.get(d), sites, homeSite, corrections, overtime, shifts));
         }
         return out;
     }
 
     /** One person's day, with an approved correction applied; Today uses this too (without overtime). */
     static Day day(Emp e, LocalDate d, LocalDateTime now, List<PunchRow> punches, List<Leave> leave, String holiday,
-                   Map<UUID, SiteRef> sites, UUID homeSite, List<CorrectionRow> corrections, List<OvertimeRow> overtime) {
+                   Map<UUID, SiteRef> sites, UUID homeSite, List<CorrectionRow> corrections, List<OvertimeRow> overtime,
+                   List<AttendanceFacts.ShiftRow> shifts) {
         List<PunchRow> mine = AttendanceFacts.on(punches, d, e.zone());
         PunchRow firstIn = mine.stream().filter(p -> p.type() == Punch.Type.IN).findFirst().orElse(null);
+        AttendanceFacts.RosterOn roster = AttendanceFacts.rosterOn(shifts, d);
+        UUID rosteredSite = roster.shifts().isEmpty() ? null : roster.shifts().get(0).siteId();
         SiteRef site = firstIn != null && firstIn.siteId() != null && sites.containsKey(firstIn.siteId())
-            ? sites.get(firstIn.siteId()) : sites.get(homeSite);
-        boolean workingDay = holiday == null && e.workDays().contains(d.getDayOfWeek());
+            ? sites.get(firstIn.siteId()) : rosteredSite != null && sites.containsKey(rosteredSite) ? sites.get(rosteredSite) : sites.get(homeSite);
+        // A published shift makes the day a working one (even a rest day or holiday) with the shift's hours; on a
+        // rostered week, a day without shifts is off. Without a roster, the working week and site hours apply.
+        boolean workingDay = !roster.shifts().isEmpty()
+            || (!roster.rosteredWeek() && holiday == null && e.workDays().contains(d.getDayOfWeek()));
+        DayStatus.Hours hours = !roster.shifts().isEmpty() ? shiftHours(roster.shifts())
+            : site == null ? DayStatus.Hours.DEFAULT : site.hours();
         AttendanceFacts.LeaveOn l = AttendanceFacts.leaveOn(leave, d);
         AttendanceFacts.CorrectionsOn c = AttendanceFacts.correctionsOn(corrections, d);
         List<WorkDay.Clocking> clockings = mine.stream()
             .map(p -> new WorkDay.Clocking(AttendanceFacts.local(p.at(), e.zone()), p.type())).toList();
         if (c.applied() != null) clockings = WorkDay.corrected(clockings, c.applied().clockIn(), c.applied().clockOut());
 
-        var r = WorkDay.of(new WorkDay.Input(d, workingDay, l == null ? null : l.part(),
-            site == null ? DayStatus.Hours.DEFAULT : site.hours(), clockings, now));
+        var r = WorkDay.of(new WorkDay.Input(d, workingDay, l == null ? null : l.part(), hours, clockings, now));
 
         boolean absent = r.status().status() == DayStatus.Status.NOT_IN && r.status().overdue() && d.isBefore(now.toLocalDate());
         return new Day(d, r.status().status(), absent, workingDay ? null : holiday != null ? "HOLIDAY" : "REST_DAY", holiday,
@@ -159,7 +173,24 @@ class TimesheetService {
             r.lateMin(), r.earlyMin(), r.missedOut(), r.stillIn(), mine.stream().anyMatch(p -> "FLAGGED".equals(p.result())),
             r.status().overdue(), r.status().overdue() ? r.status().minutesLate() : 0, c.applied() != null,
             c.latest() == null ? null : new CorrectionRef(c.latest().id(), c.latest().status(), c.latest().clockIn(), c.latest().clockOut()),
-            AttendanceFacts.overtimeMinOn(overtime, d));
+            AttendanceFacts.overtimeMinOn(overtime, d),
+            roster.shifts().stream().map(s -> new ShiftRef(s.start(), s.end(), s.code(), s.breakMin())).toList(),
+            extraMinutes(r.workedMin(), roster.shifts()));
+    }
+
+    /** Time worked beyond the day's shifts (their paid time); 0 without shifts. Candidates for an overtime request. */
+    static int extraMinutes(int workedMin, List<AttendanceFacts.ShiftRow> shifts) {
+        if (shifts.isEmpty()) return 0;
+        int planned = shifts.stream().mapToInt(s -> (int) java.time.Duration.between(s.start(), s.end()).toMinutes() - s.breakMin()).sum();
+        return Math.max(0, workedMin - planned);
+    }
+
+    /** Expected from the first shift's start to the last shift's end, with the first shift's grace. */
+    static DayStatus.Hours shiftHours(List<AttendanceFacts.ShiftRow> shifts) {
+        LocalTime start = shifts.stream().map(AttendanceFacts.ShiftRow::start).min(LocalTime::compareTo).orElseThrow();
+        LocalTime end = shifts.stream().map(AttendanceFacts.ShiftRow::end).max(LocalTime::compareTo).orElseThrow();
+        int grace = shifts.stream().filter(s -> s.start().equals(start)).findFirst().orElseThrow().graceMin();
+        return new DayStatus.Hours(start, end, grace);
     }
 
     static Totals totals(List<Day> days) {

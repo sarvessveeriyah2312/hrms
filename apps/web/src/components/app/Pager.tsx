@@ -30,7 +30,8 @@ export function Pager({ label, page, pages, from, to, total, pageSize, pageSizes
   const id = useId();
   if (total === 0) return null;
   const sizes = [...new Set([...pageSizes, pageSize])].sort((a, b) => a - b);
-  const showSizes = pageSizes.length > 0 && total > Math.min(...sizes);
+  // Shown whenever there are rows, so people know they can change it (pages appear once there's more than one).
+  const showSizes = pageSizes.length > 0;
 
   return (
     <div className="ui-pager">

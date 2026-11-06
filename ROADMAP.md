@@ -37,13 +37,13 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 
 ## Phase 3 · Scheduling
 
-- [ ] **Shift templates:** start, end, breaks, grace time, colour. · S
-- [ ] **Rosters:** plan a week by site and person (drag shifts onto people), copy last week, up to 3 shifts a day. · L
-- [ ] **Publish:** check for problems first (overlaps, people on leave, missing roles), publish to staff, unpublish; notify people of changes. · M
-- [ ] **My schedule** for employees (web, later mobile). · S
-- [ ] **Availability:** employees set when they can work (up to 3 windows a day, weekly pattern). · M
-- [ ] **Shift swaps** with a colleague and **open shifts** to grab, both through approval. · M
-- [ ] **Clock-in against the shift:** lateness and overtime worked out from the scheduled shift; overtime approved before it's worked (pre-OT). · M
+- [x] **Shift templates:** start, end, breaks, grace time, colour. · S
+- [x] **Rosters:** plan a week by site and person (drag shifts onto people), copy last week, up to 3 shifts a day. · L
+- [x] **Publish:** check for problems first (overlaps, people on leave, holidays, rest days, short rest; missing roles waits for skills), publish to staff, unpublish; notify people of changes. · M
+- [x] **My schedule** for employees (web, later mobile). · S
+- [x] **Availability:** employees set when they can work (up to 3 windows a day, weekly pattern). · M
+- [x] **Shift swaps** with a colleague and **open shifts** to grab, both through approval. · M
+- [x] **Clock-in against the shift:** lateness and overtime worked out from the scheduled shift; overtime approved before it's worked (pre-OT). · M
 
 ## Phase 4 · Payroll documents
 

@@ -20,6 +20,7 @@ import { ClaimSettingsPage } from '../features/claims/ClaimSettingsPage';
 import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage';
 import { SitesPage } from '../features/attendance/SitesPage';
 import { OvertimeRulesPage } from '../features/attendance/OvertimeRulesPage';
+import { RostersPage } from '../features/attendance/RostersPage';
 import { AttendancePage } from '../features/attendance/AttendancePage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { ChangePasswordPage } from '../features/account/ChangePasswordPage';
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
           { path: 'approvals', element: <RequirePermission any={['attendance:approve', 'leave:approve', 'claims:approve']}><ApprovalsPage /></RequirePermission> },
           { path: 'account/password', element: <ChangePasswordPage /> },
           { path: 'attendance/sites', element: <RequirePermission module="attendance" any={['attendance:manage']}><SitesPage /></RequirePermission> },
+          { path: 'attendance/rosters', element: <RequirePermission module="attendance" any={['attendance:roster', 'attendance:manage']}><RostersPage /></RequirePermission> },
           { path: 'attendance/overtime-rules', element: <RequirePermission module="attendance" any={['attendance:manage']}><OvertimeRulesPage /></RequirePermission> },
           { path: 'people', element: <RequirePermission any={['employee:view']}><PeoplePage /></RequirePermission> },
           { path: 'attendance', element: <RequirePermission module="attendance" any={['attendance:clock', 'attendance:view', 'attendance:timesheets']}><AttendancePage /></RequirePermission> },

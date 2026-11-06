@@ -72,6 +72,8 @@ export interface Problem {
   fields?: Record<string, string>;
   /** With code COMPANY_REQUIRED: the companies the password matched. */
   companies?: { code: string; name: string }[];
+  /** With codes ROSTER_HAS_ERRORS / ROSTER_HAS_WARNINGS: what to fix or confirm. */
+  problems?: RosterProblem[];
 }
 
 // ---------- directory and administration ----------
@@ -335,7 +337,7 @@ export interface FlowStep {
 }
 
 /** What a workflow is for. */
-export type FlowSubject = 'LEAVE' | 'CLAIM' | 'CORRECTION' | 'OVERTIME';
+export type FlowSubject = 'LEAVE' | 'CLAIM' | 'CORRECTION' | 'OVERTIME' | 'SHIFT_CHANGE';
 
 /**
  * Choosing a workflow for a type. Changes: SWITCH_ON, ADD_TYPE, REMOVE_TYPE (from flow), MOVE_ABOVE (flow).
@@ -639,6 +641,10 @@ export interface TimesheetDay {
   correction: { id: string; status: CorrectionStatus; clockIn: string | null; clockOut: string | null } | null;
   /** Approved overtime on the day, any rate. */
   overtimeMin: number;
+  /** The published shifts that day (they set the expected hours). */
+  shifts: { start: string; end: string; code: string | null; breakMin: number }[];
+  /** Time worked beyond the day's shifts (their paid time): something to ask overtime for. */
+  extraMin: number;
 }
 
 // ---------- attendance corrections ----------
@@ -689,6 +695,8 @@ export interface OvertimeRequest {
   creditedHours: number | null; creditedDays: number | null; leaveType: string | null;
   /** The kind of day it was sent for (null on requests from before rates were set by rules). */
   dayKind: OvertimeDayKind | null;
+  /** Asked for before the day it's for. */
+  planned: boolean;
 }
 
 /** What time off earned (done) or would earn if approved now. */
@@ -737,13 +745,15 @@ export interface OvertimeRule {
   rateWorking: number; rateRest: number; rateHoliday: number;
   /** AUTO: the rate comes from the kind of day. EMPLOYEE: the employee picks one of the rule's rates. */
   rateMode: 'AUTO' | 'EMPLOYEE';
+  /** Overtime has to be asked for before it's worked. */
+  requirePreApproval: boolean;
 }
 
 export interface OvertimeRuleInput {
   entityId: string | null; departmentId: string | null;
   compensation: OvertimeRuleCompensation; conversion: OvertimeConversion; creditUnit: 'HALF_DAY' | 'FULL_DAY';
   hoursPerUnit: number; applyRate: boolean; leaveTypeId: string | null; expiry: OvertimeExpiry; expiryDays: number | null;
-  rateWorking: number; rateRest: number; rateHoliday: number; rateMode: 'AUTO' | 'EMPLOYEE';
+  rateWorking: number; rateRest: number; rateHoliday: number; rateMode: 'AUTO' | 'EMPLOYEE'; requirePreApproval: boolean;
 }
 
 export interface OvertimeRuleSettings {
@@ -758,6 +768,94 @@ export interface OvertimeRuleSettings {
 export interface ApproveManyResult {
   approved: string[];
   failed: { instanceId: string; code: string; message: string }[];
+}
+
+// ---------- scheduling ----------
+
+export type ShiftTone = 'blue' | 'green' | 'orange' | 'teal' | 'purple' | 'pink';
+
+export interface ShiftTemplate {
+  id: string; name: string; code: string; startTime: string; endTime: string;
+  breakMin: number; graceMin: number; tone: ShiftTone; active: boolean;
+}
+
+export interface ShiftTemplateInput {
+  name: string; code: string; startTime: string; endTime: string; breakMin: number; graceMin: number; tone: ShiftTone; active: boolean;
+}
+
+/** A shift in a site's working (draft) roster. Times are HH:mm(:ss), local. employeeId null: an open shift. */
+export interface RosterShift {
+  id: string; siteId: string; employeeId: string | null; date: string; startTime: string; endTime: string;
+  breakMin: number; graceMin: number; templateId: string | null; code: string | null; tone: ShiftTone; note: string | null;
+}
+
+/** templateId fills in the times not given. */
+export interface RosterShiftInput {
+  siteId?: string; employeeId?: string | null; date?: string; templateId?: string | null;
+  startTime?: string | null; endTime?: string | null; breakMin?: number | null; graceMin?: number | null; note?: string | null;
+}
+
+/** ERROR stops publishing; WARNING needs confirming. */
+export interface RosterProblem {
+  kind: 'OVERLAP' | 'TOO_MANY' | 'ON_LEAVE' | 'HOLIDAY' | 'REST_DAY' | 'UNAVAILABLE' | 'SHORT_REST';
+  severity: 'ERROR' | 'WARNING';
+  shiftId: string; employeeId: string; employeeName: string; date: string; detail: string | null;
+}
+
+export interface RosterWeek {
+  site: { id: string; name: string };
+  weekStart: string; days: string[];
+  holidays: Record<string, string>;
+  /** member: assigned to the site (others appear because they have shifts here). leave: by date. workDays: ISO 1–7. */
+  people: {
+    id: string; employeeNo: string; fullName: string; department: string | null; workDays: number[]; leave: Record<string, string>; member: boolean;
+    /** Weekdays they've limited; the others are any time. */
+    availability: AvailabilityDay[];
+  }[];
+  shifts: RosterShift[];
+  /** changed: the working copy differs from what's published (or was never published). */
+  status: { published: boolean; publishedAt: string | null; publishedBy: string | null; changed: boolean };
+  problems: RosterProblem[];
+  /** Some day of the week is in a month locked for payroll. */
+  locked: boolean;
+}
+
+/** weekday ISO 1 (Monday) to 7. ANY: any time (the default); NONE: not available; WINDOWS: up to 3 windows (HH:mm). */
+export interface AvailabilityDay {
+  weekday: number; mode: 'ANY' | 'NONE' | 'WINDOWS'; windows: { start: string; end: string }[];
+}
+
+/** A published shift as shift requests see it (employeeId null: open). */
+export interface PublishedShift {
+  id: string; siteId: string; site: string; employeeId: string | null; employeeName: string | null; date: string;
+  startTime: string; endTime: string; code: string | null; tone: ShiftTone;
+}
+
+export type ShiftRequestKind = 'GIVE' | 'SWAP' | 'CLAIM';
+export type ShiftRequestStatus = 'COLLEAGUE' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'DECLINED' | 'CANCELLED';
+
+/** mine: you asked. forMe: you're the colleague and it's waiting for you. */
+export interface ShiftRequest {
+  id: string; kind: ShiftRequestKind; status: ShiftRequestStatus; requesterId: string; requesterName: string;
+  shift: PublishedShift | null; colleagueId: string | null; colleagueName: string | null; colleagueShift: PublishedShift | null;
+  reason: string | null; returnedComment: string | null; createdAt: string;
+  pendingWith: { level: number; totalSteps: number; label: string; approver: string } | null;
+  mine: boolean; forMe: boolean;
+}
+
+/** A site's published roster as colleagues see it: names and times only. Shifts with employeeId null are open. */
+export interface SiteRoster {
+  sites: { id: string; name: string }[];
+  site: { id: string; name: string } | null;
+  weekStart: string; days: string[];
+  people: { id: string; name: string }[];
+  shifts: { id: string; employeeId: string | null; date: string; startTime: string; endTime: string; code: string | null; tone: ShiftTone }[];
+}
+
+/** A published shift on your own schedule. */
+export interface MyShift {
+  id: string; date: string; startTime: string; endTime: string; breakMin: number; code: string | null; tone: ShiftTone;
+  note: string | null; siteId: string; site: string;
 }
 
 // ---------- attendance report and locked months ----------
@@ -1115,6 +1213,49 @@ export function createApiClient(opts: ApiClientOptions) {
       timesheets: (range: { from?: string; to?: string } = {}) => request<TeamTimesheets>('GET', `/attendance/timesheets${query(range)}`),
       report: (q: { year?: number; month?: number } = {}) => request<AttendanceReport>('GET', `/attendance/reports${query(q)}`),
       reportCsv: (q: { year?: number; month?: number } = {}) => request<Blob>('GET', `/attendance/reports/csv${query(q)}`, { blob: true }),
+      shiftTemplates: {
+        list: () => request<ShiftTemplate[]>('GET', '/attendance/shift-templates'),
+        create: (input: ShiftTemplateInput) => request<ShiftTemplate>('POST', '/attendance/shift-templates', { body: input }),
+        update: (id: string, input: ShiftTemplateInput) => request<ShiftTemplate>('PUT', `/attendance/shift-templates/${id}`, { body: input }),
+        remove: (id: string) => request<void>('DELETE', `/attendance/shift-templates/${id}`),
+      },
+      rosters: {
+        sites: () => request<{ id: string; name: string }[]>('GET', '/attendance/rosters/sites'),
+        /** week: any day of it (YYYY-MM-DD). */
+        week: (siteId: string, week: string) => request<RosterWeek>('GET', `/attendance/rosters${query({ siteId, week })}`),
+        addShift: (input: RosterShiftInput) => request<RosterShift>('POST', '/attendance/rosters/shifts', { body: input }),
+        updateShift: (id: string, input: RosterShiftInput) => request<RosterShift>('PUT', `/attendance/rosters/shifts/${id}`, { body: input }),
+        removeShift: (id: string) => request<void>('DELETE', `/attendance/rosters/shifts/${id}`),
+        copyPrevious: (siteId: string, week: string) =>
+          request<{ copied: number; skipped: number }>('POST', '/attendance/rosters/copy-previous', { body: { siteId, week } }),
+        clear: (siteId: string, week: string) => request<number>('POST', '/attendance/rosters/clear', { body: { siteId, week } }),
+        /** Fails with ROSTER_HAS_ERRORS, or ROSTER_HAS_WARNINGS until acknowledge is true (problems in the error). */
+        publish: (siteId: string, week: string, acknowledge = false) =>
+          request<RosterWeek>('POST', '/attendance/rosters/publish', { body: { siteId, week, acknowledge } }),
+        unpublish: (siteId: string, week: string) => request<RosterWeek>('POST', '/attendance/rosters/unpublish', { body: { siteId, week } }),
+      },
+      /** The published roster of a site you're at (siteId: default your first site; week: any day of it). */
+      siteRoster: (week: string, siteId?: string) => request<SiteRoster>('GET', `/attendance/site-rosters${query({ siteId, week })}`),
+      /** Your published shifts (up to 62 days). */
+      mySchedule: (from: string, to: string) => request<MyShift[]>('GET', `/attendance/schedule/me${query({ from, to })}`),
+      availability: {
+        mine: () => request<AvailabilityDay[]>('GET', '/attendance/availability/me'),
+        save: (days: AvailabilityDay[]) => request<AvailabilityDay[]>('PUT', '/attendance/availability/me', { body: { days } }),
+      },
+      /** Open shifts at your sites for the next four weeks. */
+      openShifts: () => request<{ shift: PublishedShift; requested: boolean }[]>('GET', '/attendance/open-shifts'),
+      shiftRequests: {
+        mine: () => request<ShiftRequest[]>('GET', '/attendance/shift-requests'),
+        /** Colleagues at the shift's site, with their shifts that week (to swap for). */
+        options: (shiftId: string) =>
+          request<{ shift: PublishedShift; colleagues: { id: string; fullName: string; shifts: PublishedShift[] }[] }>('GET', `/attendance/shift-requests/options${query({ shiftId })}`),
+        ask: (input: { kind: ShiftRequestKind; shiftId: string; colleagueId?: string | null; colleagueShiftId?: string | null; reason?: string | null }) =>
+          request<ShiftRequest>('POST', '/attendance/shift-requests', { body: input }),
+        accept: (id: string) => request<ShiftRequest>('POST', `/attendance/shift-requests/${id}/accept`),
+        decline: (id: string) => request<void>('POST', `/attendance/shift-requests/${id}/decline`),
+        cancel: (id: string) => request<void>('POST', `/attendance/shift-requests/${id}/cancel`),
+        detail: (id: string) => request<{ request: ShiftRequest; timeline: TimelineStep[] }>('GET', `/attendance/shift-requests/${id}`),
+      },
       locks: {
         /** month: YYYY-MM */
         status: (month: string) => request<PeriodLockStatus>('GET', `/attendance/locks${query({ month })}`),

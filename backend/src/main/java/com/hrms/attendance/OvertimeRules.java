@@ -48,7 +48,8 @@ class OvertimeRules {
     record Rule(UUID id, String scope, UUID entityId, String entityName, UUID departmentId, String departmentName,
                 String compensation, String conversion, String creditUnit, BigDecimal hoursPerUnit, boolean applyRate,
                 UUID leaveTypeId, String leaveTypeName, String expiry, Integer expiryDays, Instant updatedAt,
-                BigDecimal rateWorking, BigDecimal rateRest, BigDecimal rateHoliday, String rateMode) {
+                BigDecimal rateWorking, BigDecimal rateRest, BigDecimal rateHoliday, String rateMode,
+                boolean requirePreApproval) {
 
         BigDecimal rateFor(DayKind kind) {
             return switch (kind) {
@@ -74,12 +75,13 @@ class OvertimeRules {
     }
 
     static final Rule DEFAULT = new Rule(null, "DEFAULT", null, null, null, null, "PAY", "BANKED", "HALF_DAY",
-        new BigDecimal("4"), false, null, null, "NONE", null, null, WORKING_RATE, REST_RATE, HOLIDAY_RATE, "AUTO");
+        new BigDecimal("4"), false, null, null, "NONE", null, null, WORKING_RATE, REST_RATE, HOLIDAY_RATE, "AUTO", false);
 
     /** entityId or departmentId (not both) or neither for the company-wide rule. */
     record RuleInput(UUID entityId, UUID departmentId, String compensation, String conversion, String creditUnit,
                      BigDecimal hoursPerUnit, Boolean applyRate, UUID leaveTypeId, String expiry, Integer expiryDays,
-                     BigDecimal rateWorking, BigDecimal rateRest, BigDecimal rateHoliday, String rateMode) {
+                     BigDecimal rateWorking, BigDecimal rateRest, BigDecimal rateHoliday, String rateMode,
+                     Boolean requirePreApproval) {
     }
 
     record Option(UUID id, String name) {
@@ -94,7 +96,8 @@ class OvertimeRules {
                               else 'COMPANY' end as scope,
                    r.entity_id, le.name as entity_name, r.department_id, d.name as department_name, r.compensation,
                    r.conversion, r.credit_unit, r.hours_per_unit, r.apply_rate, r.leave_type_id, lt.name as leave_type_name,
-                   r.expiry, r.expiry_days, r.updated_at, r.rate_working, r.rate_rest, r.rate_holiday, r.rate_mode
+                   r.expiry, r.expiry_days, r.updated_at, r.rate_working, r.rate_rest, r.rate_holiday, r.rate_mode,
+                   r.require_pre_approval
             from overtime_rule r
             left join legal_entity le on le.id = r.entity_id
             left join department d on d.id = r.department_id
@@ -202,22 +205,23 @@ class OvertimeRules {
         values.put("rr", orDefault(in.rateRest(), REST_RATE));
         values.put("rh", orDefault(in.rateHoliday(), HOLIDAY_RATE));
         values.put("mode", in.rateMode() == null ? "AUTO" : in.rateMode());
+        values.put("pre", Boolean.TRUE.equals(in.requirePreApproval()));
         UUID ruleId = id == null ? UUID.randomUUID() : id;
         try {
             if (id == null) {
                 jdbc.sql("""
                         insert into overtime_rule (id, tenant_id, entity_id, department_id, compensation, conversion, credit_unit,
                                                    hours_per_unit, apply_rate, leave_type_id, expiry, expiry_days,
-                                                   rate_working, rate_rest, rate_holiday, rate_mode)
+                                                   rate_working, rate_rest, rate_holiday, rate_mode, require_pre_approval)
                         values (:id, :tenant, :entity, :dept, :comp, :conv, :unit, :hours, :rate, :type, :expiry, :days,
-                                :rw, :rr, :rh, :mode)""")
+                                :rw, :rr, :rh, :mode, :pre)""")
                     .param("id", ruleId).param("tenant", TenantContext.require()).params(values).update();
             } else {
                 int n = jdbc.sql("""
                         update overtime_rule set entity_id = :entity, department_id = :dept, compensation = :comp,
                                conversion = :conv, credit_unit = :unit, hours_per_unit = :hours, apply_rate = :rate,
                                leave_type_id = :type, expiry = :expiry, expiry_days = :days, rate_working = :rw,
-                               rate_rest = :rr, rate_holiday = :rh, rate_mode = :mode, updated_at = now()
+                               rate_rest = :rr, rate_holiday = :rh, rate_mode = :mode, require_pre_approval = :pre, updated_at = now()
                         where id = :id""")
                     .param("id", ruleId).params(values).update();
                 if (n == 0) throw notFound();

@@ -3,11 +3,12 @@ import type { timesheet as en } from '../en/timesheet';
 
 export const timesheet: Shape<typeof en> = {
   attendance: {
-    tabs: { today: '今天', team: '考勤表', mine: '我的考勤表', overtime: '加班' },
+    tabs: { today: '今天', team: '考勤表', mine: '我的考勤表', schedule: '我的班表', overtime: '加班' },
     subtitle: {
       today: '谁已到岗、迟到、尚未到岗、休假或休息。',
       team: '每个人的工时、迟到、早退和漏打下班卡。',
       mine: '您每天的打卡记录、工时以及 HR 可能会询问的情况。',
+      schedule: '您已发布的班次，每次显示两周。',
       overtime: '为您额外工作的时间申请加班费，并跟进您的申请。',
     },
   },

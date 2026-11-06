@@ -44,3 +44,16 @@ export function usePaging<T>(rows: T[], { pageSize: initial = 25, resetKey, onPa
     },
   };
 }
+
+/**
+ * A table's page size kept in the URL under `name` (left out when it's the default), for <Table>:
+ * `<Table {...urlPageSize(filters, 'typeSize', 10)} />`. Several tables on a page each use their own name.
+ */
+export function urlPageSize(params: { param: (name: string) => string | null; setParam: (name: string, value: string | null) => void },
+  name: string, fallback = 25) {
+  const n = Number(params.param(name));
+  return {
+    pageSize: PAGE_SIZES.includes(n) ? n : fallback,
+    onPageSizeChange: (size: number) => params.setParam(name, size === fallback ? null : String(size)),
+  };
+}

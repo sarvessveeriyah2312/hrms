@@ -21,7 +21,8 @@ export const rateForDay = (r: OvertimeRule, kind: 'WORKING' | 'REST' | 'HOLIDAY'
 export function ruleText(t: TFunction, r: OvertimeRule) {
   const rates = t('otRules.summary.rates', { working: rateText(r.rateWorking), rest: rateText(r.rateRest), holiday: rateText(r.rateHoliday) })
     + (r.rateMode === 'EMPLOYEE' ? ` ${t('otRules.summary.employeePicks')}` : '');
-  if (r.compensation === 'PAY' || !r.leaveTypeId) return `${t('otRules.summary.pay')} · ${rates}`;
+  const pre = r.requirePreApproval ? ` · ${t('otRules.summary.preApproval')}` : '';
+  if (r.compensation === 'PAY' || !r.leaveTypeId) return `${t('otRules.summary.pay')} · ${rates}${pre}`;
   const unit = t(r.creditUnit === 'FULL_DAY' ? 'otRules.summary.fullDay' : 'otRules.summary.halfDay', { hours: num(r.hoursPerUnit), type: r.leaveTypeName });
   const parts = [
     r.compensation === 'CHOICE' ? t('otRules.summary.choice') : t('otRules.summary.timeOff'),
@@ -31,5 +32,5 @@ export function ruleText(t: TFunction, r: OvertimeRule) {
     r.compensation === 'CHOICE' || r.applyRate ? rates : null,
     r.expiry === 'DAYS' ? t('otRules.summary.expiresDays', { n: r.expiryDays }) : r.expiry === 'YEAR_END' ? t('otRules.summary.expiresYearEnd') : null,
   ];
-  return parts.filter(Boolean).join(' · ');
+  return parts.filter(Boolean).join(' · ') + pre;
 }

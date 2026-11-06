@@ -40,7 +40,7 @@ export const core: Shape<typeof en> = {
   nav: {
     dashboard: '首页', people: '员工', attendance: '考勤', leave: '休假', claims: '报销', approvals: '审批',
     reports: '报表', settings: '设置', admin: '系统管理', users: '用户', roles: '角色与权限', company: '公司',
-    sites: '工作地点', overtimeRules: '加班规则', leaveSettings: '休假设置', claimSettings: '报销设置', workflows: '审批流程',
+    sites: '工作地点', rosters: '排班', overtimeRules: '加班规则', leaveSettings: '休假设置', claimSettings: '报销设置', workflows: '审批流程',
   },
   site: {
     login: '登录', getStarted: '开始使用', navLabel: '网站', footerLabel: '页脚', privacy: '隐私',

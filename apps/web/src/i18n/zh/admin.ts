@@ -62,6 +62,8 @@ export const admin: Shape<typeof en> = {
       view: { name: '查看考勤', description: '查看今日出勤情况和打卡记录。' },
       timesheets: { name: '查看工时表', description: '每人每天的工作时长、迟到、早退和漏打下班卡。' },
       approve: { name: '审批考勤更正和加班', description: '处理考勤相关申请。' },
+      rosters: { name: '查看工作地点排班', description: '所在工作地点已发布的排班：谁上哪个班（仅姓名和时间）。' },
+      roster: { name: '排班', description: '为各工作地点的人员安排、发布和修改班次。' },
       manage: { name: '管理考勤规则', description: '工作地点、地理围栏、Wi-Fi、加班规则和班次。' },
       lock: { name: '锁定考勤期间', description: '在发薪前锁定某月，使考勤表、更正和加班无法更改；解锁时需填写原因。' },
     },

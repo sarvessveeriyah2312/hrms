@@ -24,6 +24,7 @@ export const overtime = {
     asked: 'Asked for', hoursOnly: '{{hours}} h', hoursTimeOff: '{{hours}} h as time off', atRate: '{{text}} at {{rate}}',
     autoRate: '{{kind}}: paid at {{rate}}.', suggestedRate: 'Suggested for this day ({{kind}}): {{rate}}.',
     dayKindLabel: 'Kind of day', dayKind: { WORKING: 'Working day', REST: 'Rest day', HOLIDAY: 'Public holiday' },
+    planned: 'Planned', plannedHint: 'A planned day: it’s approved before it’s worked. If you end up not working it, withdraw it.',
     onDay: 'Overtime {{time}}', column: 'Overtime',
   },
   otRules: {
@@ -64,6 +65,7 @@ export const overtime = {
       AUTO: 'Working day, rest day or public holiday is worked out from the person’s working week and the holiday list.',
       EMPLOYEE: 'The employee picks one of these rates on each request; the one for that day is suggested.',
     },
+    preApproval: 'Overtime must be asked for before it’s worked', preApprovalHint: 'Requests for a past day are refused; up to 30 days ahead is fine. Without this, overtime can also be asked for afterwards (up to 60 days back).',
     inShort: 'In short:', remove: 'Remove rule',
     removeHint: 'People here then follow the next rule up. Leave already earned stays.',
     removeCompanyHint: 'Without a company-wide rule, overtime is paid unless an entity or department rule says otherwise. Leave already earned stays.',
@@ -72,6 +74,7 @@ export const overtime = {
       halfDay: 'half a day of {{type}} for every {{hours}} h', fullDay: 'a day of {{type}} for every {{hours}} h',
       banked: 'hours add up across requests', perRequest: 'each request on its own',
       rates: 'rates {{working}} / {{rest}} / {{holiday}}', employeePicks: '(employee picks)',
+      preApproval: 'ask before it’s worked',
       rateApplies: 'rate multiplies the hours', expiresDays: 'expires after {{n}} days', expiresYearEnd: 'expires at year end',
     },
   },

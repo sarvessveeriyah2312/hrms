@@ -8,7 +8,7 @@ import { errorText, SCOPE_LABEL } from '../../lib/access';
 import { monthName } from '../../lib/dates';
 import { saveBlob } from '../../lib/download';
 import { useUrlFilters, type FilterDef } from '../../lib/filters';
-import { PAGE_SIZES } from '../../lib/paging';
+import { PAGE_SIZES, urlPageSize } from '../../lib/paging';
 import { Card, StatCard, Status } from '../../components/app/kit';
 import { FilterBar } from '../../components/app/FilterBar';
 import { Table } from '../../components/app/Table';
@@ -197,8 +197,8 @@ export function AttendanceReport() {
             rowKey={(g) => g.first.month}
             loading={report.isPending}
             empty={t('reports.nobody')}
-            pageSize={12}
-            pageSizes={[]}
+            resetKey={filters.key}
+            {...urlPageSize(filters, 'monthSize', 10)}
             columns={[
               { key: 'month', header: t('reports.claims.month'), rowHeader: true, cell: (g) => (
                 <>{monthName(Number(g.first.month.slice(5)))}{g.locked && <> <Status tone="grey">{t('lock.locked')}</Status></>}</>

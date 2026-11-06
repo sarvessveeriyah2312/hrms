@@ -11,6 +11,7 @@ import { Glyph } from '../../components/Glyph';
 import { Card, EmptyState, List, PageHeader, Status } from '../../components/app/kit';
 import { CorrectionFacts } from '../attendance/Corrections';
 import { OvertimeFacts } from '../attendance/Overtime';
+import { ShiftChangeFacts } from '../attendance/ShiftChangeFacts';
 import { Panel } from '../../components/app/Panel';
 import { Pager } from '../../components/app/Pager';
 import { usePaging } from '../../lib/paging';
@@ -256,6 +257,11 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
     queryFn: () => api.attendance.corrections.detail(item.subjectId),
     enabled: item.subjectType === 'CORRECTION',
   });
+  const shiftChange = useQuery({
+    queryKey: ['attendance', 'shift-request', item.subjectId],
+    queryFn: () => api.attendance.shiftRequests.detail(item.subjectId),
+    enabled: item.subjectType === 'SHIFT_CHANGE',
+  });
   const overtime = useQuery({
     queryKey: ['attendance', 'overtime', item.subjectId],
     queryFn: () => api.attendance.overtime.detail(item.subjectId),
@@ -264,8 +270,8 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
   const [comment, setComment] = useState('');
   const decide = useDecide(onClose);
   const r = detail.data?.request;
-  const timeline = detail.data?.timeline ?? claim.data?.timeline ?? correction.data?.timeline ?? overtime.data?.timeline;
-  const loadError = detail.error ?? claim.error ?? correction.error ?? overtime.error;
+  const timeline = detail.data?.timeline ?? claim.data?.timeline ?? correction.data?.timeline ?? overtime.data?.timeline ?? shiftChange.data?.timeline;
+  const loadError = detail.error ?? claim.error ?? correction.error ?? overtime.error ?? shiftChange.error;
   const b = balance.data?.find((x) => x.leaveTypeId === r?.leaveTypeId);
 
   return (
@@ -274,6 +280,7 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
       {claim.data && <ClaimFacts claim={claim.data.claim} showEmployee />}
       {correction.data && <CorrectionFacts detail={correction.data} showEmployee />}
       {overtime.data && <OvertimeFacts detail={overtime.data} showEmployee />}
+      {shiftChange.data && <ShiftChangeFacts request={shiftChange.data.request} />}
       {r && (
         <dl className="facts">
           <dt>{t('req.employee')}</dt><dd>{r.employeeName} ({item.requesterNo})</dd>

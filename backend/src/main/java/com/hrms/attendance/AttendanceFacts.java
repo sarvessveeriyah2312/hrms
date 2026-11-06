@@ -54,6 +54,18 @@ class AttendanceFacts {
     record CorrectionRow(UUID id, UUID employeeId, LocalDate date, LocalTime clockIn, LocalTime clockOut, String status) {
     }
 
+    /** A published shift; times are local. */
+    record ShiftRow(UUID employeeId, LocalDate date, LocalTime start, LocalTime end, int graceMin, UUID siteId, String code, int breakMin) {
+    }
+
+    /**
+     * What the published roster says about a day: its shifts, and whether the person is on a published roster that
+     * week at all (then a day without shifts is a day off).
+     */
+    record RosterOn(List<ShiftRow> shifts, boolean rosteredWeek) {
+        static final RosterOn NONE = new RosterOn(List.of(), false);
+    }
+
     /** Approved overtime on one day: hours at a rate. */
     record OvertimeRow(UUID employeeId, LocalDate date, BigDecimal hours, BigDecimal rate) {
     }
@@ -195,6 +207,33 @@ class AttendanceFacts {
             .query((rs, i) -> new OvertimeRow(rs.getObject("employee_id", UUID.class), rs.getObject("work_date", LocalDate.class),
                 rs.getBigDecimal("hours"), rs.getBigDecimal("rate")))
             .list().stream().collect(Collectors.groupingBy(OvertimeRow::employeeId));
+    }
+
+    /** Published shifts for whole weeks (Monday to Sunday) around from..to, by person. */
+    Map<UUID, List<ShiftRow>> publishedShifts(List<UUID> ids, LocalDate from, LocalDate to) {
+        if (ids.isEmpty()) return Map.of();
+        LocalDate start = from.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate end = to.with(java.time.temporal.TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+        return jdbc.sql("""
+                select employee_id, work_date, start_time, end_time, grace_min, site_id, code, break_min from published_shift
+                where employee_id in (:ids) and work_date between :from and :to order by work_date, start_time""")
+            .param("ids", ids).param("from", start).param("to", end)
+            .query((rs, i) -> new ShiftRow(rs.getObject("employee_id", UUID.class), rs.getObject("work_date", LocalDate.class),
+                rs.getObject("start_time", LocalTime.class), rs.getObject("end_time", LocalTime.class), rs.getInt("grace_min"),
+                rs.getObject("site_id", UUID.class), rs.getString("code"), rs.getInt("break_min")))
+            .list().stream().collect(Collectors.groupingBy(ShiftRow::employeeId));
+    }
+
+    static RosterOn rosterOn(List<ShiftRow> rows, LocalDate day) {
+        if (rows == null || rows.isEmpty()) return RosterOn.NONE;
+        LocalDate monday = day.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        boolean week = false;
+        List<ShiftRow> on = new java.util.ArrayList<>();
+        for (ShiftRow r : rows) {
+            if (r.date().equals(day)) on.add(r);
+            if (!r.date().isBefore(monday) && !r.date().isAfter(monday.plusDays(6))) week = true;
+        }
+        return new RosterOn(on, week);
     }
 
     /** Approved overtime on a day, in minutes. */

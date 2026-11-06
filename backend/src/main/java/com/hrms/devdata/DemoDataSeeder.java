@@ -135,6 +135,7 @@ class DemoDataSeeder implements ApplicationRunner {
                     p.put("reports:claims", DataScope.TENANT);
                     p.put("reports:attendance", DataScope.TENANT);
                     p.put("attendance:lock", DataScope.TENANT);
+                    p.put("attendance:roster", DataScope.TENANT);
                     p.put("admin:users", DataScope.TENANT);
                 }
                 case MANAGER -> {
@@ -148,6 +149,7 @@ class DemoDataSeeder implements ApplicationRunner {
                     p.put("reports:leave", DataScope.TEAM);
                     p.put("reports:claims", DataScope.TEAM);
                     p.put("reports:attendance", DataScope.TEAM);
+                    p.put("attendance:roster", DataScope.TEAM);
                 }
                 case EMPLOYEE -> {
                     selfService(p);
@@ -161,6 +163,7 @@ class DemoDataSeeder implements ApplicationRunner {
 
         private static void selfService(Map<String, DataScope> p) {
             p.put("attendance:clock", DataScope.SELF);
+            p.put("attendance:rosters", DataScope.SELF);
             p.put("leave:apply", DataScope.SELF);
             p.put("claims:submit", DataScope.SELF);
         }

@@ -17,7 +17,8 @@ type Tab = (typeof TABS)[number];
 
 /**
  * Approval workflow settings: build who approves which leave requests or claims, in what order, and try it out.
- * ?for=claims switches to claim workflows, ?for=corrections to attendance corrections and ?for=overtime to overtime
+ * ?for=claims switches to claim workflows, ?for=corrections to attendance corrections, ?for=overtime to overtime and
+ * ?for=shifts to shift swaps and open-shift claims
  * (only when the company has that module).
  */
 export function WorkflowsPage() {
@@ -27,15 +28,16 @@ export function WorkflowsPage() {
   const hasClaims = hasModule(user, 'claims');
   const hasLeave = hasModule(user, 'leave');
   const hasAttendance = hasModule(user, 'attendance');
-  const subjects = ([hasLeave && 'LEAVE', hasClaims && 'CLAIM', hasAttendance && 'CORRECTION', hasAttendance && 'OVERTIME'] as const)
+  const subjects = ([hasLeave && 'LEAVE', hasClaims && 'CLAIM', hasAttendance && 'CORRECTION', hasAttendance && 'OVERTIME', hasAttendance && 'SHIFT_CHANGE'] as const)
     .filter((s): s is FlowSubject => !!s);
-  const forParams: Record<string, FlowSubject> = { claims: 'CLAIM', corrections: 'CORRECTION', overtime: 'OVERTIME' };
+  const forParams: Record<string, FlowSubject> = { claims: 'CLAIM', corrections: 'CORRECTION', overtime: 'OVERTIME', shifts: 'SHIFT_CHANGE' };
   const wanted: FlowSubject = forParams[params.get('for') ?? ''] ?? 'LEAVE';
   const subject: FlowSubject = subjects.includes(wanted) ? wanted : subjects[0] ?? 'LEAVE';
+  const shiftChange = subject === 'SHIFT_CHANGE';
   const correction = subject === 'CORRECTION';
   const overtime = subject === 'OVERTIME';
   // Attendance workflows have no "try it out" (it previews leave types and claim amounts), so only the workflows tab.
-  const attendance = correction || overtime;
+  const attendance = correction || overtime || shiftChange;
   const requested: Tab = (TABS as readonly string[]).includes(params.get('tab') ?? '') ? (params.get('tab') as Tab) : 'flows';
   const tab: Tab = attendance ? 'flows' : requested;
   const go = (next: { subject?: FlowSubject; tab?: Tab }) => {
@@ -64,7 +66,7 @@ export function WorkflowsPage() {
     <>
       <PageHeader
         title={t('nav.workflows')}
-        subtitle={tab === 'flows' ? (claim ? t('wf.subtitleClaim') : correction ? t('wf.subtitleCorrection') : overtime ? t('wf.subtitleOvertime') : t('wf.subtitle')) : (claim ? t('wf.trySubtitleClaim') : t('wf.trySubtitle'))}
+        subtitle={tab === 'flows' ? (claim ? t('wf.subtitleClaim') : correction ? t('wf.subtitleCorrection') : overtime ? t('wf.subtitleOvertime') : shiftChange ? t('wf.subtitleShiftChange') : t('wf.subtitle')) : (claim ? t('wf.trySubtitleClaim') : t('wf.trySubtitle'))}
         actions={tab === 'flows' && <button type="button" className="btn primary" onClick={() => setSelected('new')}><Icon name="plus" size={16} />{t('wf.new')}</button>}
       />
 
@@ -107,7 +109,7 @@ export function WorkflowsPage() {
               <Card>
                 <EmptyState icon="switch" tone="blue" title={t('wf.noneTitle')}
                   action={<button type="button" className="btn primary" onClick={() => setSelected('new')}>{t('wf.buildFirst')}</button>}>
-                  {claim ? t('wf.noneBodyClaim') : correction ? t('wf.noneBodyCorrection') : overtime ? t('wf.noneBodyOvertime') : t('wf.noneBody')}
+                  {claim ? t('wf.noneBodyClaim') : correction ? t('wf.noneBodyCorrection') : overtime ? t('wf.noneBodyOvertime') : shiftChange ? t('wf.noneBodyCorrection') : t('wf.noneBody')}
                 </EmptyState>
               </Card>
             )}

@@ -31,6 +31,8 @@ public class OvertimeService {
 
     /** How far back overtime can be asked for. */
     static final int MAX_AGE_DAYS = 60;
+    /** How far ahead overtime can be asked for (planned, approved before it's worked). */
+    static final int MAX_AHEAD_DAYS = 30;
     static final int MAX_REASON = 500;
     /** A day's open and approved overtime can't add up to more than this. */
     static final BigDecimal MAX_HOURS_PER_DAY = new BigDecimal("24");
@@ -51,7 +53,7 @@ public class OvertimeService {
                     BigDecimal rate, String reason, String status, String returnedComment, Instant createdAt,
                     Instant decidedAt, WorkflowService.PendingWith pendingWith, boolean canCancel, boolean canEdit,
                     String compensation, BigDecimal creditedHours, BigDecimal creditedDays, String leaveType,
-                    String dayKind) {
+                    String dayKind, boolean planned) {
     }
 
     /** The rule that applies to you, and your banked hours for its leave type. */
@@ -70,13 +72,13 @@ public class OvertimeService {
     private record Row(UUID id, UUID employeeId, String employeeName, String employeeNo, LocalDate workDate,
                        BigDecimal hours, BigDecimal rate, String reason, String status, String returnedComment,
                        Instant createdAt, Instant decidedAt, UUID workflowId, String compensation, BigDecimal creditedHours,
-                       BigDecimal creditedDays, UUID leaveTypeId, String leaveType, String dayKind) {
+                       BigDecimal creditedDays, UUID leaveTypeId, String leaveType, String dayKind, boolean planned) {
     }
 
     private static final String SELECT = """
             select o.id, o.employee_id, e.full_name as employee_name, e.employee_no, o.work_date, o.hours, o.rate,
                    o.reason, o.status, o.returned_comment, o.created_at, o.decided_at, o.workflow_id, o.compensation,
-                   o.credited_hours, o.credited_days, o.leave_type_id, lt.name as leave_type, o.day_kind
+                   o.credited_hours, o.credited_days, o.leave_type_id, lt.name as leave_type, o.day_kind, o.planned
             from overtime_request o join employee e on e.id = o.employee_id
             left join leave_type lt on lt.id = o.leave_type_id
             """;
@@ -158,17 +160,19 @@ public class OvertimeService {
         String compensation = compensation(rule, in);
         check(in, e.joinDate(), LocalDate.now(clock.withZone(e.zone())));
         locks.requireOpen(in.date(), "overtime");
+        checkPreApproval(rule, in.date(), LocalDate.now(clock.withZone(e.zone())));
+        boolean planned = in.date().isAfter(LocalDate.now(clock.withZone(e.zone())));
         OvertimeRules.DayKind kind = dayKind(e, in.date());
         BigDecimal rate = rateNeeded(rule, compensation) ? OvertimeRules.rateFor(rule, kind, in.rate()) : null;
         lockPerson(employeeId);
         checkDayTotal(hoursOn(employeeId, in.date(), null), in.hours());
         UUID id = UUID.randomUUID();
         jdbc.sql("""
-                insert into overtime_request (id, tenant_id, employee_id, work_date, hours, rate, reason, status, compensation, day_kind)
-                values (:id, :tenant, :emp, :date, :hours, :rate, :reason, 'PENDING', :comp, :kind)""")
+                insert into overtime_request (id, tenant_id, employee_id, work_date, hours, rate, reason, status, compensation, day_kind, planned)
+                values (:id, :tenant, :emp, :date, :hours, :rate, :reason, 'PENDING', :comp, :kind, :planned)""")
             .param("id", id).param("tenant", TenantContext.require()).param("emp", employeeId).param("date", in.date())
             .param("hours", in.hours()).param("rate", rate).param("reason", in.reason().trim())
-            .param("comp", compensation).param("kind", kind.name()).update();
+            .param("comp", compensation).param("kind", kind.name()).param("planned", planned).update();
         startApproval(id, employeeId, in.hours());
         return find(id).orElseThrow();
     }
@@ -188,17 +192,19 @@ public class OvertimeService {
         String compensation = compensation(rule, in);
         check(in, e.joinDate(), LocalDate.now(clock.withZone(e.zone())));
         locks.requireOpen(in.date(), "overtime");
+        checkPreApproval(rule, in.date(), LocalDate.now(clock.withZone(e.zone())));
+        boolean planned = in.date().isAfter(LocalDate.now(clock.withZone(e.zone())));
         OvertimeRules.DayKind kind = dayKind(e, in.date());
         BigDecimal rate = rateNeeded(rule, compensation) ? OvertimeRules.rateFor(rule, kind, in.rate()) : null;
         lockPerson(employeeId);
         checkDayTotal(hoursOn(employeeId, in.date(), id), in.hours());
         jdbc.sql("""
                 update overtime_request set work_date = :date, hours = :hours, rate = :rate, reason = :reason,
-                       compensation = :comp, day_kind = :kind, status = 'PENDING', returned_comment = null,
+                       compensation = :comp, day_kind = :kind, planned = :planned, status = 'PENDING', returned_comment = null,
                        decided_at = null, version = version + 1
                 where id = :id""")
             .param("date", in.date()).param("hours", in.hours()).param("rate", rate)
-            .param("reason", in.reason().trim()).param("comp", compensation).param("kind", kind.name()).param("id", id).update();
+            .param("reason", in.reason().trim()).param("comp", compensation).param("kind", kind.name()).param("planned", planned).param("id", id).update();
         startApproval(id, employeeId, in.hours());
         return find(id).orElseThrow();
     }
@@ -282,9 +288,16 @@ public class OvertimeService {
         }
     }
 
-    /** A public holiday, else a rest day (outside their entity's working week), else a working day. */
+    /**
+     * A public holiday; else from the published roster (a shift: working day; rostered week without one: rest day);
+     * else from their entity's working week.
+     */
     private OvertimeRules.DayKind dayKind(Emp e, LocalDate date) {
-        return kindOf(!facts.holidays(date, date).isEmpty(), e.workDays(), date);
+        boolean holiday = !facts.holidays(date, date).isEmpty();
+        var roster = AttendanceFacts.rosterOn(facts.publishedShifts(List.of(e.id()), date, date).get(e.id()), date);
+        if (!holiday && !roster.shifts().isEmpty()) return OvertimeRules.DayKind.WORKING;
+        if (!holiday && roster.rosteredWeek()) return OvertimeRules.DayKind.REST;
+        return kindOf(holiday, e.workDays(), date);
     }
 
     static OvertimeRules.DayKind kindOf(boolean holiday, Set<java.time.DayOfWeek> workDays, LocalDate date) {
@@ -292,10 +305,19 @@ public class OvertimeService {
         return workDays.contains(date.getDayOfWeek()) ? OvertimeRules.DayKind.WORKING : OvertimeRules.DayKind.REST;
     }
 
+    /** With a rule that requires it, overtime is asked for before the day it's worked (today still counts). */
+    static void checkPreApproval(OvertimeRules.Rule rule, LocalDate date, LocalDate today) {
+        if (rule.requirePreApproval() && date.isBefore(today)) {
+            throw bad("PRE_APPROVAL_REQUIRED", "Overtime here has to be asked for before it's worked, so a past day can't be asked for.");
+        }
+    }
+
     /** Checks a request against the person's join date and their local "today". The rate is checked against the rule. */
     static void check(Input in, LocalDate joined, LocalDate today) {
         if (in == null || in.date() == null) throw bad("DATE_REQUIRED", "Choose the day you worked overtime.");
-        if (in.date().isAfter(today)) throw bad("DATE_IN_FUTURE", "Ask for overtime on the day you work it, or after.");
+        if (in.date().isAfter(today.plusDays(MAX_AHEAD_DAYS))) {
+            throw bad("DATE_TOO_FAR", "Overtime can be asked for up to " + MAX_AHEAD_DAYS + " days ahead.");
+        }
         if (in.date().isBefore(today.minusDays(MAX_AGE_DAYS))) {
             throw bad("OVERTIME_TOO_OLD", "Overtime more than " + MAX_AGE_DAYS + " days ago can't be asked for.");
         }
@@ -320,7 +342,7 @@ public class OvertimeService {
         boolean open = "PENDING".equals(r.status()) || "RETURNED".equals(r.status());
         return new Overtime(r.id(), r.employeeId(), r.employeeName(), r.employeeNo(), r.workDate(), r.hours(), r.rate(),
             r.reason(), r.status(), r.returnedComment(), r.createdAt(), r.decidedAt(), pending, open, "RETURNED".equals(r.status()),
-            r.compensation(), r.creditedHours(), r.creditedDays(), r.leaveType(), r.dayKind());
+            r.compensation(), r.creditedHours(), r.creditedDays(), r.leaveType(), r.dayKind(), r.planned());
     }
 
     static ApiException notFound() {

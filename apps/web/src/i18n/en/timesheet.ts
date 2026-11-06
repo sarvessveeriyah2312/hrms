@@ -1,11 +1,12 @@
 /** Attendance page tabs, and timesheets. */
 export const timesheet = {
   attendance: {
-    tabs: { today: 'Today', team: 'Timesheets', mine: 'My timesheet', overtime: 'Overtime' },
+    tabs: { today: 'Today', team: 'Timesheets', mine: 'My timesheet', schedule: 'My schedule', overtime: 'Overtime' },
     subtitle: {
       today: 'Who’s in, late, not in yet, on leave or off.',
       team: 'Hours, lateness, early leaving and missed clock-outs, person by person.',
       mine: 'Your clock-ins by day, with hours worked and anything HR may ask about.',
+      schedule: 'Your published shifts, two weeks at a time.',
       overtime: 'Ask to be paid for extra hours you worked, and follow your requests.',
     },
   },

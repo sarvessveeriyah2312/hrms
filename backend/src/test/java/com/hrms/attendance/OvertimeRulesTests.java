@@ -21,7 +21,7 @@ class OvertimeRulesTests {
                                            String hoursPerUnit, boolean applyRate, String expiry, Integer days) {
         return new OvertimeRules.Rule(UUID.randomUUID(), scope, entity, null, dept, null, comp, conversion, unit,
             new BigDecimal(hoursPerUnit), applyRate, "PAY".equals(comp) ? null : LEAVE, "Replacement leave", expiry, days, null,
-            new BigDecimal("1.5"), new BigDecimal("2.0"), new BigDecimal("3.0"), "AUTO");
+            new BigDecimal("1.5"), new BigDecimal("2.0"), new BigDecimal("3.0"), "AUTO", false);
     }
 
     /** Your company's rule: banked, 4 hours = half a day, rate ignored. */
@@ -126,7 +126,7 @@ class OvertimeRulesTests {
 
     private static OvertimeRules.Rule rates(String mode, String working, String rest, String holiday) {
         return new OvertimeRules.Rule(null, "COMPANY", null, null, null, null, "PAY", "BANKED", "HALF_DAY", d("4"), false,
-            null, null, "NONE", null, null, d(working), d(rest), d(holiday), mode);
+            null, null, "NONE", null, null, d(working), d(rest), d(holiday), mode, false);
     }
 
     @Test
@@ -163,5 +163,18 @@ class OvertimeRulesTests {
         assertThat(OvertimeService.kindOf(false, week, LocalDate.of(2026, 11, 6))).isEqualTo(OvertimeRules.DayKind.WORKING);   // Fri
         assertThat(OvertimeService.kindOf(false, week, LocalDate.of(2026, 11, 7))).isEqualTo(OvertimeRules.DayKind.REST);      // Sat
         assertThat(OvertimeService.kindOf(true, week, LocalDate.of(2026, 11, 7))).isEqualTo(OvertimeRules.DayKind.HOLIDAY);
+    }
+
+    @Test
+    void preApprovalMeansAskingBeforeTheDay() {
+        var r = new OvertimeRules.Rule(null, "COMPANY", null, null, null, null, "PAY", "BANKED", "HALF_DAY", d("4"), false,
+            null, null, "NONE", null, null, d("1.5"), d("2"), d("3"), "AUTO", true);
+        LocalDate today = LocalDate.of(2026, 11, 5);
+        OvertimeService.checkPreApproval(r, today, today);
+        OvertimeService.checkPreApproval(r, today.plusDays(3), today);
+        assertThatThrownBy(() -> OvertimeService.checkPreApproval(r, today.minusDays(1), today))
+            .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("PRE_APPROVAL_REQUIRED"));
+        // Without the rule, a past day is fine.
+        OvertimeService.checkPreApproval(OvertimeRules.DEFAULT, today.minusDays(1), today);
     }
 }

@@ -175,6 +175,27 @@ class TimesheetServiceTests {
     }
 
     @Test
+    void aPublishedShiftSetsTheHoursAndARosteredWeekMakesOtherDaysOff() {
+        // Mon 2 Nov: rostered 14:00–22:00, in at 14:20 (late against the shift, not the site's 09:00).
+        clock("2026-11-02", "14:20", Punch.Type.IN);
+        clock("2026-11-02", "22:00", Punch.Type.OUT);
+        when(facts.publishedShifts(anyList(), any(), any())).thenReturn(Map.of(ME, List.of(
+            new AttendanceFacts.ShiftRow(ME, LocalDate.of(2026, 11, 2), LocalTime.of(14, 0), LocalTime.of(22, 0), 10, HQ.id(), "PM", 30))));
+
+        var days = service.sheet(ME, null, null).days();
+        var mon = days.get(1);
+        assertThat(mon.status()).isEqualTo(Status.LATE);
+        assertThat(mon.lateMin()).isEqualTo(20);
+        assertThat(mon.expectedIn()).isEqualTo(LocalTime.of(14, 0));
+        assertThat(mon.shifts()).extracting(TimesheetService.ShiftRef::code).containsExactly("PM");
+        // Worked 7h40m against a 7h30m paid shift (8h less a 30-minute break): 10 minutes extra.
+        assertThat(mon.extraMin()).isEqualTo(10);
+        // Tue–Thu have no shift in a rostered week: days off, not absences.
+        assertThat(days.get(2).offReason()).isEqualTo("REST_DAY");
+        assertThat(days.get(2).absent()).isFalse();
+    }
+
+    @Test
     void aPastDayWithNoClockInIsAbsent() {
         var t = service.sheet(ME, null, null).totals();
         assertThat(t.absent()).isEqualTo(3);   // Mon–Wed; Sunday is a rest day and Thursday isn't over

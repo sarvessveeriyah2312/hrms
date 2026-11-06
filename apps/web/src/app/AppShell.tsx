@@ -28,6 +28,7 @@ const NAV: NavItem[] = [
   { to: '/app', key: 'dashboard', icon: 'home', end: true, show: () => true },
   { to: '/app/people', key: 'people', icon: 'users', show: (u) => can(u, 'employee:view') },
   { to: '/app/attendance', key: 'attendance', icon: 'clock', end: true, show: (u) => hasModule(u, 'attendance') && canAny(u, ['attendance:clock', 'attendance:view', 'attendance:timesheets']) },
+  { to: '/app/attendance/rosters', key: 'rosters', icon: 'calendar', show: (u) => hasModule(u, 'attendance') && canAny(u, ['attendance:roster', 'attendance:manage']) },
   { to: '/app/leave', key: 'leave', icon: 'calendar', end: true, show: (u) => hasModule(u, 'leave') && canAny(u, ['leave:apply', 'leave:view']) },
   { to: '/app/claims', key: 'claims', icon: 'receipt', end: true, show: (u) => hasModule(u, 'claims') && canAny(u, ['claims:submit', 'claims:view']) },
   { to: '/app/approvals', key: 'approvals', icon: 'inbox', show: (u) => canAny(u, ['attendance:approve', 'leave:approve', 'claims:approve']) },

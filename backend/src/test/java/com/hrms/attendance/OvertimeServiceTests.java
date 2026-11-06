@@ -54,7 +54,8 @@ class OvertimeServiceTests {
 
     @Test
     void onlyDaysThatHappenedAndNotTooLongAgo() {
-        refused(input(TODAY.plusDays(1), "2", "1.5", "x"), "DATE_IN_FUTURE");
+        accepted(input(TODAY.plusDays(OvertimeService.MAX_AHEAD_DAYS), "2", "1.5", "x"));   // planned, approved before it's worked
+        refused(input(TODAY.plusDays(OvertimeService.MAX_AHEAD_DAYS + 1), "2", "1.5", "x"), "DATE_TOO_FAR");
         refused(input(TODAY.minusDays(OvertimeService.MAX_AGE_DAYS + 1), "2", "1.5", "x"), "OVERTIME_TOO_OLD");
         accepted(input(TODAY.minusDays(OvertimeService.MAX_AGE_DAYS), "2", "1.5", "x"));
         assertThatThrownBy(() -> OvertimeService.check(input(YESTERDAY, "2", "1.5", "x"), TODAY, TODAY))

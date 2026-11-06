@@ -8,7 +8,7 @@ import { monthName } from '../../lib/dates';
 import { saveBlob } from '../../lib/download';
 import { useUrlFilters, type FilterDef } from '../../lib/filters';
 import { formatMoney } from '../../lib/money';
-import { PAGE_SIZES } from '../../lib/paging';
+import { PAGE_SIZES, urlPageSize } from '../../lib/paging';
 import { Card, StatCard, Status } from '../../components/app/kit';
 import { FilterBar } from '../../components/app/FilterBar';
 import { Table } from '../../components/app/Table';
@@ -176,8 +176,8 @@ export function ClaimsReport() {
               rowKey={(g) => `${g.first.claimTypeId}|${g.first.currency}`}
               loading={report.isPending}
               empty={t('reports.claims.none')}
-              pageSize={10}
-              pageSizes={[]}
+              resetKey={filters.key}
+              {...urlPageSize(filters, 'typeSize', 10)}
               columns={[
                 { key: 'type', header: t('claims.form.type'), rowHeader: true,
                   cell: (g) => <>{g.first.claimType}<small>{t('reports.claims.typeMeta', { claims: g.sums.claims, people: g.people.size })}</small></> },
@@ -194,8 +194,8 @@ export function ClaimsReport() {
               rowKey={(g) => `${g.first.month}|${g.first.currency}`}
               loading={report.isPending}
               empty={t('reports.claims.none')}
-              pageSize={12}
-              pageSizes={[]}
+              resetKey={filters.key}
+              {...urlPageSize(filters, 'monthSize', 10)}
               columns={[
                 { key: 'month', header: t('reports.claims.month'), rowHeader: true, cell: (g) => monthName(g.first.month) },
                 { key: 'claims', header: t('reports.claims.claims'), align: 'end', cell: (g) => g.sums.claims },

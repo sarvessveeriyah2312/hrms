@@ -6,8 +6,9 @@ import { PlaceholderPage } from '../../app/PlaceholderPage';
 import { TodayTab } from './TodayTab';
 import { MyTimesheet, TeamTimesheets } from './TimesheetTab';
 import { MyOvertime } from './Overtime';
+import { MySchedule } from './MySchedule';
 
-type Tab = 'today' | 'team' | 'mine' | 'overtime';
+type Tab = 'today' | 'team' | 'mine' | 'schedule' | 'overtime';
 
 /**
  * /app/attendance. attendance:view: Today; attendance:timesheets: Team timesheets (each within its scope); anyone with
@@ -24,6 +25,7 @@ export function AttendancePage() {
     ...(canView ? [{ key: 'today' as const, label: t('attendance.tabs.today'), icon: 'clock' as const }] : []),
     ...(canTimesheets ? [{ key: 'team' as const, label: t('attendance.tabs.team'), icon: 'users' as const }] : []),
     ...(user?.employeeId ? [{ key: 'mine' as const, label: t('attendance.tabs.mine'), icon: 'calendar' as const }] : []),
+    ...(user?.employeeId && can(user, 'attendance:clock') ? [{ key: 'schedule' as const, label: t('attendance.tabs.schedule'), icon: 'clock' as const }] : []),
     ...(user?.employeeId && can(user, 'attendance:clock') ? [{ key: 'overtime' as const, label: t('attendance.tabs.overtime'), icon: 'star' as const }] : []),
   ];
   if (tabs.length === 0) return <PlaceholderPage module="attendance" />;
@@ -32,7 +34,7 @@ export function AttendancePage() {
   // Switching tabs drops the other tab's filters.
   const setTab = (key: string) => setParams(key === tabs[0].key ? {} : { tab: key }, { replace: true });
   const content = tab === 'today' ? <TodayTab /> : tab === 'team' ? <TeamTimesheets />
-    : tab === 'overtime' ? <MyOvertime /> : <MyTimesheet />;
+    : tab === 'overtime' ? <MyOvertime /> : tab === 'schedule' ? <MySchedule /> : <MyTimesheet />;
 
   return (
     <>

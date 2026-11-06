@@ -11,6 +11,10 @@ Work deferred on purpose. Pick items from here when planning the next round. New
 
 ## Approval workflows (follow-ups)
 
+- [ ] **Overnight shifts** (22:00–06:00): shifts end on the day they start; overnight needs timesheets to count a session across midnight.
+- [ ] **Roles / skills on rosters** ("needs 2 cashiers"): then the publish check can flag missing roles.
+- [ ] **Roster templates** (a whole standard week) and **auto-fill** from availability.
+- [ ] **Mobile:** My schedule and shift notifications in the app.
 - [ ] **Lock per company entity:** locks are company-wide; entities paid on different dates may want their own.
 - [ ] **Attendance report for big companies:** it works a year out month by month (up to 500 people per month, like timesheets); store monthly totals if that gets slow.
 - [ ] **Undo time off for overtime:** HR can't yet reverse an approved overtime request (and the leave or banked hours it gave); today they'd adjust the person's entitlement by hand.

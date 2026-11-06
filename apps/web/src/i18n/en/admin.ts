@@ -60,6 +60,8 @@ export const admin = {
       view: { name: 'See attendance', description: 'See who’s in today and their clock-ins.' },
       timesheets: { name: 'See timesheets', description: 'Each person’s days: hours worked, late, left early, missed clock-outs.' },
       approve: { name: 'Approve corrections and overtime', description: 'Act on attendance requests.' },
+      rosters: { name: 'See site rosters', description: 'The published roster of the sites they’re at: who works which shift (names and times only).' },
+      roster: { name: 'Plan rosters', description: 'Plan, publish and change shifts for people at their sites.' },
       manage: { name: 'Manage attendance rules', description: 'Sites, geofences, Wi-Fi, overtime rules and shifts.' },
       lock: { name: 'Lock attendance periods', description: 'Lock a month before payroll so timesheets, corrections and overtime can’t change; unlock with a reason.' },
     },

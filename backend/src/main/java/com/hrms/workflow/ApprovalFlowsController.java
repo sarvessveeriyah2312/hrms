@@ -33,11 +33,11 @@ class ApprovalFlowsController {
     record Order(List<UUID> order) {
     }
 
-    private static final Set<String> SUBJECTS = Set.of("LEAVE", "CLAIM", "CORRECTION", "OVERTIME");
+    private static final Set<String> SUBJECTS = Set.of("LEAVE", "CLAIM", "CORRECTION", "OVERTIME", "SHIFT_CHANGE");
 
     /** Who manages each subject's own settings, and may read (not change) its workflows there. */
     private static final Map<String, String> SETTINGS_PERMISSION = Map.of(
-        "LEAVE", "leave:manage", "CLAIM", "claims:manage", "CORRECTION", "attendance:manage", "OVERTIME", "attendance:manage");
+        "LEAVE", "leave:manage", "CLAIM", "claims:manage", "CORRECTION", "attendance:manage", "OVERTIME", "attendance:manage", "SHIFT_CHANGE", "attendance:manage");
 
     private final ApprovalFlows flows;
     private final PermissionChecker perm;
@@ -53,7 +53,7 @@ class ApprovalFlowsController {
 
     private static String subject(String value) {
         String s = value == null || value.isBlank() ? "LEAVE" : value.trim().toUpperCase();
-        if (!SUBJECTS.contains(s)) throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_SUBJECT", "Workflows are for LEAVE, CLAIM, CORRECTION or OVERTIME.");
+        if (!SUBJECTS.contains(s)) throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_SUBJECT", "Workflows are for LEAVE, CLAIM, CORRECTION, OVERTIME or SHIFT_CHANGE.");
         return s;
     }
 

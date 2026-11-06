@@ -246,6 +246,7 @@ class SearchController {
             case "CLAIM" -> "for=claims&";
             case "CORRECTION" -> "for=corrections&";
             case "OVERTIME" -> "for=overtime&";
+            case "SHIFT_CHANGE" -> "for=shifts&";
             default -> "";
         };
     }

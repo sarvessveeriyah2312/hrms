@@ -16,7 +16,7 @@ type Scope = 'COMPANY' | 'ENTITY' | 'DEPARTMENT';
 const EMPTY: OvertimeRuleInput = {
   entityId: null, departmentId: null, compensation: 'TIME_OFF', conversion: 'BANKED', creditUnit: 'HALF_DAY',
   hoursPerUnit: 4, applyRate: false, leaveTypeId: null, expiry: 'NONE', expiryDays: null,
-  rateWorking: 1.5, rateRest: 2, rateHoliday: 3, rateMode: 'AUTO',
+  rateWorking: 1.5, rateRest: 2, rateHoliday: 3, rateMode: 'AUTO', requirePreApproval: false,
 };
 
 function toInput(r: OvertimeRule): OvertimeRuleInput {
@@ -25,6 +25,7 @@ function toInput(r: OvertimeRule): OvertimeRuleInput {
     creditUnit: r.creditUnit, hoursPerUnit: Number(r.hoursPerUnit), applyRate: r.applyRate, leaveTypeId: r.leaveTypeId,
     expiry: r.expiry, expiryDays: r.expiryDays,
     rateWorking: Number(r.rateWorking), rateRest: Number(r.rateRest), rateHoliday: Number(r.rateHoliday), rateMode: r.rateMode,
+    requirePreApproval: r.requirePreApproval,
   };
 }
 
@@ -179,6 +180,14 @@ function RuleEditor({ rule, settings, hasCompany, onClose }: {
           ))}
         </div>
         <p className="hint">{t(`otRules.compHint.${input.compensation}`)}</p>
+
+        <label className="check-line ot-check">
+          <input type="checkbox" checked={input.requirePreApproval} onChange={(e) => set('requirePreApproval', e.target.checked)} />
+          <span>
+            {t('otRules.preApproval')}
+            <span className="hint"> {t('otRules.preApprovalHint')}</span>
+          </span>
+        </label>
 
         {!pay && (
           <>

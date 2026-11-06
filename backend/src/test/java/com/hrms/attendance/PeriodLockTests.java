@@ -34,7 +34,7 @@ class PeriodLockTests {
 
     private static OvertimeService.Overtime overtime() {
         return new OvertimeService.Overtime(ID, UUID.randomUUID(), "Aina", "E001", OCT, new BigDecimal("2"), new BigDecimal("1.5"),
-            "x", "PENDING", null, null, null, null, true, false, "PAY", null, null, null, "WORKING");
+            "x", "PENDING", null, null, null, null, true, false, "PAY", null, null, null, "WORKING", false);
     }
 
     @Test

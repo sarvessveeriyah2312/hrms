@@ -26,6 +26,7 @@ export const overtime: Shape<typeof en> = {
     asked: '申请内容', hoursOnly: '{{hours}} 小时', hoursTimeOff: '{{hours}} 小时补休', atRate: '{{text}}，{{rate}}',
     autoRate: '{{kind}}：按 {{rate}} 支付。', suggestedRate: '{{kind}}的倍率为 {{rate}}。',
     dayKindLabel: '日期类型', dayKind: { WORKING: '工作日', REST: '休息日', HOLIDAY: '公共假期' },
+    planned: '预先申请', plannedHint: '预先申请：在加班前审批。如最终没有加班，请撤回申请。',
     onDay: '加班 {{time}}', column: '加班',
   },
   otRules: {
@@ -66,6 +67,7 @@ export const overtime: Shape<typeof en> = {
       AUTO: '根据该员工的工作周和假期列表判断是工作日、休息日还是公共假期。',
       EMPLOYEE: '员工在每项申请中从这些倍率中选择一个，系统会建议当天适用的倍率。',
     },
+    preApproval: '加班必须在进行前申请', preApprovalHint: '过去日期的申请会被拒绝；最多可提前 30 天申请。不勾选时，也可事后申请（最多 60 天前）。',
     inShort: '简而言之：', remove: '删除规则',
     removeHint: '此处的员工将改用上一级规则。已获得的补休保留。',
     removeCompanyHint: '没有全公司规则时，除非实体或部门规则另有规定，加班支付加班费。已获得的补休保留。',
@@ -74,6 +76,7 @@ export const overtime: Shape<typeof en> = {
       halfDay: '每 {{hours}} 小时换半天{{type}}', fullDay: '每 {{hours}} 小时换一天{{type}}',
       banked: '跨申请累积时数', perRequest: '每项申请单独计算',
       rates: '倍率 {{working}} / {{rest}} / {{holiday}}', employeePicks: '（员工选择）',
+      preApproval: '须事先申请',
       rateApplies: '倍率乘以时数', expiresDays: '{{n}} 天后过期', expiresYearEnd: '年底过期',
     },
   },

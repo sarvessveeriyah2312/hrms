@@ -10,7 +10,7 @@ import { api } from '../../lib/api';
 import { errorText } from '../../lib/access';
 import { addDays, formatDate, isoDate, relative } from '../../lib/dates';
 import { useUrlFilters } from '../../lib/filters';
-import { Card } from '../../components/app/kit';
+import { Card, Status } from '../../components/app/kit';
 import { Panel } from '../../components/app/Panel';
 import { Table } from '../../components/app/Table';
 import { Icon } from '../../components/Icon';
@@ -21,6 +21,8 @@ import './attendance.css';
 
 /** How far back overtime can be asked for (the server's limit). */
 const MAX_AGE_DAYS = 60;
+/** How far ahead overtime can be asked for (planned, approved before it's worked). */
+const MAX_AHEAD_DAYS = 30;
 const MAX_REASON = 500;
 
 const hhmm = (time: string | null | undefined) => (time ? time.slice(0, 5) : '');
@@ -58,7 +60,10 @@ export function MyOvertime() {
   const filters = useUrlFilters([]);
   const openId = filters.param('overtime');
   const setOpen = (id: string | null) => filters.setParam('overtime', id);
-  const [form, setForm] = useState<{ editing: OvertimeRequest | null } | null>(null);
+  // Opened from a timesheet day with time beyond the shift: ?ask=<date>&hours=<h>.
+  const asked = filters.param('ask');
+  const [form, setForm] = useState<{ editing: OvertimeRequest | null; date?: string; hours?: string } | null>(
+    asked ? { editing: null, date: asked, hours: filters.param('hours') ?? undefined } : null);
   const list = useQuery({ queryKey: ['attendance', 'overtime', 'mine'], queryFn: api.attendance.overtime.mine });
   const mine = useQuery({ queryKey: ['attendance', 'overtime', 'rule'], queryFn: api.attendance.overtime.myRule });
   const rows = list.data ?? [];
@@ -114,6 +119,7 @@ export function MyOvertime() {
             { key: 'status', header: t('overtime.status'), cell: (o) => (
               <span className="corr-status">
                 <CorrectionStatusChip status={o.status} />
+                {o.planned && <Status tone="blue">{t('overtime.planned')}</Status>}
                 {o.pendingWith && <span className="muted">{t('correction.waitingFor', { name: o.pendingWith.approver })}</span>}
               </span>
             ) },
@@ -121,7 +127,8 @@ export function MyOvertime() {
         />
       </Card>
       {openId && <OvertimePanel id={openId} onEdit={(o) => { setOpen(null); setForm({ editing: o }); }} onClose={() => setOpen(null)} />}
-      {form && rule && <OvertimeForm editing={form.editing} rule={rule} bankHours={mine.data!.bankHours} onClose={() => setForm(null)} />}
+      {form && rule && <OvertimeForm editing={form.editing} rule={rule} bankHours={mine.data!.bankHours} initialDate={form.date}
+        initialHours={form.hours} onClose={() => { setForm(null); if (asked) filters.setParams({ ask: null, hours: null }); }} />}
     </div>
   );
 }
@@ -138,14 +145,14 @@ function estimate(rule: OvertimeRule, hours: number, rate: number | null, bank: 
 }
 
 /** Ask for overtime on a day, or change a request that was sent back. */
-function OvertimeForm({ editing, rule, bankHours, onClose }: {
-  editing: OvertimeRequest | null; rule: OvertimeRule; bankHours: number; onClose: () => void;
+function OvertimeForm({ editing, rule, bankHours, initialDate, initialHours, onClose }: {
+  editing: OvertimeRequest | null; rule: OvertimeRule; bankHours: number; initialDate?: string; initialHours?: string; onClose: () => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [today] = useState(() => isoDate(new Date()));
-  const [date, setDate] = useState(editing?.date ?? today);
-  const [hours, setHours] = useState(editing ? String(Number(editing.hours)) : '');
+  const [date, setDate] = useState(editing?.date ?? initialDate ?? today);
+  const [hours, setHours] = useState(editing ? String(Number(editing.hours)) : initialHours ?? '');
   // EMPLOYEE rates: what they picked (null: the rate for the day).
   const [picked, setPicked] = useState<number | null>(rule.rateMode === 'EMPLOYEE' && editing?.rate != null ? Number(editing.rate) : null);
   const [reason, setReason] = useState(editing?.reason ?? '');
@@ -154,14 +161,17 @@ function OvertimeForm({ editing, rule, bankHours, onClose }: {
     editing?.compensation ?? (timeOffAllowed && rule.compensation === 'TIME_OFF' ? 'TIME_OFF' : 'PAY'));
   const chosen: OvertimeCompensation = !timeOffAllowed ? 'PAY' : rule.compensation === 'TIME_OFF' ? 'TIME_OFF' : compensation;
   const rateNeeded = chosen === 'PAY' || rule.applyRate;
-  const oldest = addDays(today, -MAX_AGE_DAYS);
-  const dateOk = !!date && date <= today && date >= oldest;
+  // With pre-approval, only today onwards; otherwise up to 60 days back. Either way up to 30 days ahead (planned).
+  const oldest = rule.requirePreApproval ? today : addDays(today, -MAX_AGE_DAYS);
+  const latest = addDays(today, MAX_AHEAD_DAYS);
+  const dateOk = !!date && date <= latest && date >= oldest;
+  const planned = dateOk && date > today;
 
   // The day's clock-ins, so you can see what you worked.
   const day = useQuery({
     queryKey: ['attendance', 'timesheet', 'me', date, date],
     queryFn: () => api.attendance.timesheet('me', { from: date, to: date }),
-    enabled: dateOk,
+    enabled: dateOk && !planned,
   });
   const d = day.data?.days[0];
   const kind: OvertimeDayKind = d?.offReason === 'HOLIDAY' ? 'HOLIDAY' : d?.offReason === 'REST_DAY' ? 'REST' : 'WORKING';
@@ -194,9 +204,10 @@ function OvertimeForm({ editing, rule, bankHours, onClose }: {
         {submit.error && <p className="form-error" role="alert">{errorText(submit.error)}</p>}
         <label className="field">
           {t('overtime.date')}
-          <input type="date" value={date} min={oldest} max={today} onChange={(e) => setDate(e.target.value)} required />
+          <input type="date" value={date} min={oldest} max={latest} onChange={(e) => setDate(e.target.value)} required />
         </label>
-        {dateOk && (
+        {planned && <p className="notice" role="status">{t('overtime.plannedHint')}</p>}
+        {dateOk && !planned && (
           <dl className="facts">
             <dt>{t('overtime.clockIns')}</dt>
             <dd>{d ? `${sessionsText(d.sessions, t('correction.none'))} · ${worked(t, d.workedMin)}` : day.isPending ? '…' : t('correction.none')}</dd>

@@ -26,6 +26,7 @@ export const overtime: Shape<typeof en> = {
     asked: 'Dipohon', hoursOnly: '{{hours}} j', hoursTimeOff: '{{hours}} j sebagai cuti', atRate: '{{text}} pada {{rate}}',
     autoRate: '{{kind}}: dibayar pada {{rate}}.', suggestedRate: 'Untuk {{kind}} kadarnya {{rate}}.',
     dayKindLabel: 'Jenis hari', dayKind: { WORKING: 'Hari bekerja', REST: 'Hari rehat', HOLIDAY: 'Cuti umum' },
+    planned: 'Dirancang', plannedHint: 'Hari yang dirancang: diluluskan sebelum ia dilakukan. Jika anda akhirnya tidak bekerja, tarik balik permohonan ini.',
     onDay: 'Lebih masa {{time}}', column: 'Lebih masa',
   },
   otRules: {
@@ -66,6 +67,7 @@ export const overtime: Shape<typeof en> = {
       AUTO: 'Hari bekerja, hari rehat atau cuti umum ditentukan daripada minggu bekerja orang itu dan senarai cuti.',
       EMPLOYEE: 'Pekerja memilih salah satu kadar ini pada setiap permohonan; kadar untuk hari itu dicadangkan.',
     },
+    preApproval: 'Kerja lebih masa mesti dipohon sebelum ia dilakukan', preApprovalHint: 'Permohonan untuk hari yang telah lalu ditolak; sehingga 30 hari ke hadapan dibenarkan. Tanpa ini, kerja lebih masa juga boleh dipohon selepas itu (sehingga 60 hari ke belakang).',
     inShort: 'Ringkasnya:', remove: 'Buang peraturan',
     removeHint: 'Orang di sini kemudian mengikut peraturan di atasnya. Cuti yang telah diperoleh kekal.',
     removeCompanyHint: 'Tanpa peraturan seluruh syarikat, kerja lebih masa dibayar melainkan peraturan entiti atau jabatan menyatakan sebaliknya. Cuti yang telah diperoleh kekal.',
@@ -74,6 +76,7 @@ export const overtime: Shape<typeof en> = {
       halfDay: 'setengah hari {{type}} bagi setiap {{hours}} j', fullDay: 'sehari {{type}} bagi setiap {{hours}} j',
       banked: 'jam dicampur antara permohonan', perRequest: 'setiap permohonan berasingan',
       rates: 'kadar {{working}} / {{rest}} / {{holiday}}', employeePicks: '(pekerja memilih)',
+      preApproval: 'Mohon sebelum bekerja',
       rateApplies: 'kadar mendarab jam', expiresDays: 'luput selepas {{n}} hari', expiresYearEnd: 'luput pada akhir tahun',
     },
   },

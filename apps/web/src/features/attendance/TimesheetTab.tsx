@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -256,7 +257,7 @@ function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack, onFix, onO
               cellClass: (d) => (d.lateMin ? 'is-warning' : undefined) },
             { key: 'early', header: t('timesheet.leftEarly'), align: 'end', cell: (d) => (d.earlyMin ? t('timesheet.min', { n: d.earlyMin }) : '—'),
               cellClass: (d) => (d.earlyMin ? 'is-warning' : undefined) },
-            { key: 'note', header: t('today.note'), cell: (d) => <DayNote day={d} /> },
+            { key: 'note', header: t('today.note'), cell: (d) => <DayNote day={d} askOvertime={!!onFix} /> },
             ...(onFix ? [{ key: 'fix', header: t('correction.column'), cell: (d: TimesheetDay) => (
               <FixCell day={d} locked={locked} onFix={() => onFix(d)} onOpen={() => d.correction && onOpenCorrection?.(d.correction.id)} />
             ) }] : []),
@@ -320,9 +321,21 @@ function FixCell({ day: d, locked, onFix, onOpen }: { day: TimesheetDay; locked:
   );
 }
 
-function DayNote({ day: d }: { day: TimesheetDay }) {
+/** askOvertime: your own timesheet, where time beyond the shift links to an overtime request for it. */
+function DayNote({ day: d, askOvertime = false }: { day: TimesheetDay; askOvertime?: boolean }) {
   const { t } = useTranslation();
+  // Quarter hours of extra time, rounded down, as the overtime form wants them.
+  const extraHours = Math.floor(d.extraMin / 15) / 4;
+  const extra = d.extraMin >= 15 && d.overtimeMin === 0 && (
+    <span className="ts-extra">
+      {t('schedule.extra', { time: duration(t, d.extraMin) })}
+      {askOvertime && (
+        <> · <Link to={`/app/attendance?tab=overtime&ask=${d.date}&hours=${extraHours}`}>{t('schedule.askOvertime')}</Link></>
+      )}
+    </span>
+  );
   const parts = [
+    d.shifts.length > 0 && t('schedule.shiftNote', { shifts: d.shifts.map((s) => `${s.code ? `${s.code} ` : ''}${s.start.slice(0, 5)}–${s.end.slice(0, 5)}`).join(', ') }),
     d.corrected && t('correction.corrected'),
     d.overtimeMin > 0 && t('overtime.onDay', { time: duration(t, d.overtimeMin) }),
     d.holiday,
@@ -332,5 +345,10 @@ function DayNote({ day: d }: { day: TimesheetDay }) {
     d.site,
     d.flagged && t('today.flagged'),
   ].filter(Boolean);
-  return parts.length ? <span className={d.flagged ? 'today-note is-flagged' : 'today-note'}>{parts.join(' · ')}</span> : <span className="muted">—</span>;
+  if (!parts.length && !extra) return <span className="muted">—</span>;
+  return (
+    <span className={d.flagged ? 'today-note is-flagged' : 'today-note'}>
+      {parts.join(' · ')}{parts.length > 0 && extra ? ' · ' : ''}{extra}
+    </span>
+  );
 }
