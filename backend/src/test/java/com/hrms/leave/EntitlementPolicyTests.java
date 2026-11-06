@@ -70,6 +70,21 @@ class EntitlementPolicyTests {
     }
 
     @Test
+    void earnedLeaveExpiresOnlyWhenUnused() {
+        BigDecimal one = BigDecimal.ONE, two = BigDecimal.valueOf(2);
+        // Nothing expired yet: all of it counts.
+        assertEquals(0, two.compareTo(EntitlementPolicy.earned(two, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO).usable()));
+        // 1 day expired, half a day of leave taken before then: half a day is lost.
+        var e = EntitlementPolicy.earned(two, one, new BigDecimal("0.5"), BigDecimal.ZERO);
+        assertEquals(0, new BigDecimal("1.5").compareTo(e.usable()));
+        assertEquals(0, new BigDecimal("0.5").compareTo(e.expired()));
+        // Leave taken before expiry came out of carried days first (2 carried), so none of the earned day was used.
+        assertEquals(0, one.compareTo(EntitlementPolicy.earned(two, one, two, two).expired()));
+        // Took more than the expired day: nothing lost.
+        assertEquals(0, BigDecimal.ZERO.compareTo(EntitlementPolicy.earned(two, one, BigDecimal.TEN, BigDecimal.ZERO).expired()));
+    }
+
+    @Test
     void halfDayFloor() {
         assertEquals(new BigDecimal("2.5"), EntitlementPolicy.halfDayFloor(new BigDecimal("2.99")));
         assertEquals(new BigDecimal("3.0"), EntitlementPolicy.halfDayFloor(new BigDecimal("3.0")));

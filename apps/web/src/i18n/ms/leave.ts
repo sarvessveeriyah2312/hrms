@@ -32,6 +32,7 @@ export const leave: Shape<typeof en> = {
     carryExpired: '{{n}} bawa ke hadapan luput {{date}}',
     carryUseBy: 'guna {{n}} bawa ke hadapan sebelum {{date}}',
     carryIncludes: 'termasuk {{n}} bawa ke hadapan',
+    earnedIncludes: 'termasuk {{n}} diperoleh (cth. lebih masa)', earnedExpired: '{{n}} diperoleh luput tanpa digunakan',
     request: 'Permohonan cuti',
     planned: 'Dirancang',
     sentBackNotice: 'Dikembalikan untuk pindaan: “{{comment}}”',

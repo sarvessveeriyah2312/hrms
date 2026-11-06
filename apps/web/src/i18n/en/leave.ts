@@ -30,6 +30,7 @@ export const leave = {
     carryExpired: '{{n}} carried over expired {{date}}',
     carryUseBy: 'use {{n}} carried over by {{date}}',
     carryIncludes: 'includes {{n}} carried over',
+    earnedIncludes: 'includes {{n}} earned (e.g. overtime)', earnedExpired: '{{n}} earned expired unused',
     request: 'Leave request',
     planned: 'Planned',
     sentBackNotice: 'Sent back for changes: “{{comment}}”',

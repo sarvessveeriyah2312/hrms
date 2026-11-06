@@ -38,7 +38,7 @@ export const core = {
   nav: {
     dashboard: 'Dashboard', people: 'People', attendance: 'Attendance', leave: 'Leave', claims: 'Claims', approvals: 'Approvals',
     reports: 'Reports', settings: 'Settings', admin: 'Administration', users: 'Users', roles: 'Roles and permissions', company: 'Company',
-    sites: 'Sites', leaveSettings: 'Leave settings', claimSettings: 'Claim settings', workflows: 'Approval workflows',
+    sites: 'Sites', overtimeRules: 'Overtime rules', leaveSettings: 'Leave settings', claimSettings: 'Claim settings', workflows: 'Approval workflows',
   },
   site: {
     login: 'Log in', getStarted: 'Get started', navLabel: 'Site', footerLabel: 'Footer', privacy: 'Privacy',

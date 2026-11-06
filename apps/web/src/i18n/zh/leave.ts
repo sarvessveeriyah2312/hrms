@@ -32,6 +32,7 @@ export const leave: Shape<typeof en> = {
     carryExpired: '{{n}} 结转假期已于 {{date}} 过期',
     carryUseBy: '{{n}} 结转假期须在 {{date}} 前使用',
     carryIncludes: '含 {{n}} 结转假期',
+    earnedIncludes: '含 {{n}} 天已获补休（如加班）', earnedExpired: '{{n}} 天补休未使用已过期',
     request: '休假申请',
     planned: '计划中',
     sentBackNotice: '已退回修改：“{{comment}}”',

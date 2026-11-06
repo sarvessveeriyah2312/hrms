@@ -11,6 +11,8 @@ import { Icon } from '../../components/Icon';
 import { Card, EmptyState, List, PageHeader, Row, Status } from '../../components/app/kit';
 import { Panel } from '../../components/app/Panel';
 import { chainText } from './chain';
+import { TypeWorkflows } from '../workflows/TypeWorkflows';
+import { approvalText, useSubjectFlows } from '../workflows/typeFlows';
 
 const TONES: Tone[] = ['orange', 'blue', 'teal', 'green', 'purple', 'pink'];
 
@@ -21,6 +23,7 @@ const num = (n: number | null) => (n === null ? '' : String(Number(n)));
 export function ClaimSettingsPage() {
   const { t } = useTranslation();
   const types = useQuery({ queryKey: ['claims', 'settings', 'types'], queryFn: api.claims.settings.types });
+  const flows = useSubjectFlows('CLAIM');
   const [editingState, setEditingState] = useState<ClaimType | 'new' | null>(null);
   // Opened from search: ?type=<claim type id>
   const [typeParam, clearType] = useOpenParam('type');
@@ -56,7 +59,7 @@ export function ClaimSettingsPage() {
                   ct.maxPerClaim !== null ? t('cs.perClaimShort', { n: num(ct.maxPerClaim) }) : null,
                   ct.maxPerMonth !== null ? t('cs.perMonthShort', { n: num(ct.maxPerMonth) }) : null,
                   ct.maxPerClaim === null && ct.maxPerMonth === null ? t('cs.noLimit') : null,
-                  t('ls.approval', { chain: chainText(ct) }),
+                  approvalText(t, flows.data, ct.id, chainText(ct)),
                 ].filter(Boolean).join(' · ')}
                 trail={
                   <>
@@ -164,16 +167,18 @@ function TypeEditor({ type, onClose }: { type: ClaimType | null; onClose: () => 
 
         <fieldset>
           <legend>{t('ls.approvalTitle')}</legend>
-          <label className="field">
-            {t('ls.managerLevels')}
-            <select value={levels} onChange={(e) => setLevels(Number(e.target.value))}>
-              <option value={0}>{t('ls.levels0')}</option>
-              <option value={1}>{t('ls.levels1')}</option>
-              <option value={2}>{t('ls.levels2')}</option>
-            </select>
-          </label>
-          <label className="check-line"><input type="checkbox" checked={hr} onChange={(e) => setHr(e.target.checked)} />{t('ls.hrLast')}</label>
-          <p className="hint">{t('ls.chainHint', { chain: chainText({ approvalLevels: levels, hrApproval: hr }) })}</p>
+          <TypeWorkflows subject="CLAIM" typeId={type?.id ?? null}>
+            <label className="field">
+              {t('ls.managerLevels')}
+              <select value={levels} onChange={(e) => setLevels(Number(e.target.value))}>
+                <option value={0}>{t('ls.levels0')}</option>
+                <option value={1}>{t('ls.levels1')}</option>
+                <option value={2}>{t('ls.levels2')}</option>
+              </select>
+            </label>
+            <label className="check-line"><input type="checkbox" checked={hr} onChange={(e) => setHr(e.target.checked)} />{t('ls.hrLast')}</label>
+            <p className="hint">{t('ls.chainHint', { chain: chainText({ approvalLevels: levels, hrApproval: hr }) })}</p>
+          </TypeWorkflows>
         </fieldset>
 
         {type && (

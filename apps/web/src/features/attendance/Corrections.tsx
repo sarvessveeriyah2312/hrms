@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { AttendanceCorrection, CorrectionDetail, CorrectionStatus, TimesheetDay, WorkSession } from '@hrms/api-client';
 import { api } from '../../lib/api';
 import { errorText } from '../../lib/access';
@@ -23,7 +24,7 @@ export function CorrectionStatusChip({ status }: { status: CorrectionStatus }) {
 }
 
 /** "In 09:00 · Out 18:00" */
-function correctedTimes(t: (k: string, o?: Record<string, unknown>) => string, c: { clockIn: string | null; clockOut: string | null }) {
+function correctedTimes(t: TFunction, c: { clockIn: string | null; clockOut: string | null }) {
   return [c.clockIn && t('correction.in', { time: hhmm(c.clockIn) }), c.clockOut && t('correction.out', { time: hhmm(c.clockOut) })]
     .filter(Boolean).join(' · ');
 }

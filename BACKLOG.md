@@ -11,7 +11,10 @@ Work deferred on purpose. Pick items from here when planning the next round. New
 
 ## Approval workflows (follow-ups)
 
-- [ ] **Use workflows for overtime** when that module exists (claims and attendance corrections are done; the engine and builder are generic: add the subject type and its conditions).
+- [ ] **Undo time off for overtime:** HR can't yet reverse an approved overtime request (and the leave or banked hours it gave); today they'd adjust the person's entitlement by hand.
+- [ ] **Earned leave across years:** time off earned for overtime counts in the leave year it's earned in, so a "90 days" expiry is cut short at year end unless the leave type carries days forward. Count it in each year it's usable instead.
+- [ ] **Bank balance for HR:** a screen showing each person's banked overtime hours, with manual adjustments.
+- [ ] **Bulk approve for every request type** in the inbox (the `POST /approvals/approve` endpoint is generic; the inbox only offers it for overtime so far).
 - [ ] **More conditions:** entity, employee role, half day vs full day.
 - [ ] **Parallel steps** ("any two of three approvers") and **conditional steps** inside one workflow.
 - [ ] **Reassign a stuck step** when an approver has left; admin view of all requests in progress.

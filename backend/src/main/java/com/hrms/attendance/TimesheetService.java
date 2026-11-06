@@ -3,6 +3,7 @@ package com.hrms.attendance;
 import com.hrms.attendance.AttendanceFacts.CorrectionRow;
 import com.hrms.attendance.AttendanceFacts.Emp;
 import com.hrms.attendance.AttendanceFacts.Leave;
+import com.hrms.attendance.AttendanceFacts.OvertimeRow;
 import com.hrms.attendance.AttendanceFacts.PunchRow;
 import com.hrms.attendance.AttendanceFacts.SiteRef;
 import com.hrms.shared.security.DataScope;
@@ -36,12 +37,13 @@ class TimesheetService {
      * One day. Times are local to the person's legal entity. offReason: HOLIDAY or REST_DAY. overdue: not in and past
      * the expected time plus grace (overdueMin since the expected time); absent: overdue on a day that's over.
      * corrected: an approved correction changed the times; correction: the day's latest correction request, if any.
+     * overtimeMin: approved overtime on the day (any rate).
      */
     record Day(LocalDate date, DayStatus.Status status, boolean absent, String offReason, String holiday,
                String leaveType, DayStatus.LeavePart leavePart, UUID siteId, String site, LocalTime expectedIn,
                LocalTime expectedOut, List<WorkDay.Session> sessions, LocalTime firstIn, LocalTime lastOut,
                int workedMin, int lateMin, int earlyMin, boolean missedOut, boolean stillIn, boolean flagged,
-               boolean overdue, int overdueMin, boolean corrected, CorrectionRef correction) {
+               boolean overdue, int overdueMin, boolean corrected, CorrectionRef correction, int overtimeMin) {
     }
 
     /** A correction request on a day: status PENDING, APPROVED, REJECTED or RETURNED. */
@@ -50,10 +52,10 @@ class TimesheetService {
 
     /**
      * expectedDays: working days without full-day leave. absent: expected, no clock-in, and the day is over.
-     * leaveDays: approved leave on working days (half days count 0.5).
+     * leaveDays: approved leave on working days (half days count 0.5). overtimeMin: approved overtime.
      */
     record Totals(int expectedDays, int daysWorked, int workedMin, int lateCount, int lateMin, int earlyCount, int earlyMin,
-                  int missedOut, int absent, BigDecimal leaveDays, int flagged) {
+                  int missedOut, int absent, BigDecimal leaveDays, int flagged, int overtimeMin) {
     }
 
     record Sheet(UUID employeeId, String employeeNo, String fullName, String department, LocalDate from, LocalDate to,
@@ -88,7 +90,8 @@ class TimesheetService {
         List<UUID> ids = List.of(e.id());
         List<Day> days = days(e, range[0], range[1], facts.punches(ids, range[0], range[1]).get(e.id()),
             facts.leave(ids, range[0], range[1]).get(e.id()), facts.holidays(range[0], range[1]), facts.sites(),
-            facts.homeSites(ids).get(e.id()), facts.corrections(ids, range[0], range[1]).get(e.id()));
+            facts.homeSites(ids).get(e.id()), facts.corrections(ids, range[0], range[1]).get(e.id()),
+            facts.approvedOvertime(ids, range[0], range[1]).get(e.id()));
         return new Sheet(e.id(), e.employeeNo(), e.fullName(), e.department(), range[0], range[1], days, totals(days));
     }
 
@@ -106,11 +109,12 @@ class TimesheetService {
         Map<UUID, SiteRef> sites = facts.sites();
         Map<UUID, UUID> home = facts.homeSites(ids);
         Map<UUID, List<CorrectionRow>> corrections = facts.corrections(ids, range[0], range[1]);
+        Map<UUID, List<OvertimeRow>> overtime = facts.approvedOvertime(ids, range[0], range[1]);
 
         List<Line> lines = new ArrayList<>(people.size());
         for (Emp e : people) {
             List<Day> days = days(e, range[0], range[1], punches.get(e.id()), leave.get(e.id()), holidays, sites, home.get(e.id()),
-                corrections.get(e.id()));
+                corrections.get(e.id()), overtime.get(e.id()));
             SiteRef site = sites.get(home.get(e.id()));
             lines.add(new Line(e.id(), e.employeeNo(), e.fullName(), e.department(), site == null ? null : site.name(), totals(days)));
         }
@@ -120,20 +124,20 @@ class TimesheetService {
     /** The person's days in the range, from the day they joined up to today in their time zone. */
     private List<Day> days(Emp e, LocalDate from, LocalDate to, List<PunchRow> punches, List<Leave> leave,
                            Map<LocalDate, String> holidays, Map<UUID, SiteRef> sites, UUID homeSite,
-                           List<CorrectionRow> corrections) {
+                           List<CorrectionRow> corrections, List<OvertimeRow> overtime) {
         LocalDateTime now = LocalDateTime.now(clock.withZone(e.zone()));
         LocalDate start = from.isBefore(e.joinDate()) ? e.joinDate() : from;
         LocalDate end = to.isAfter(now.toLocalDate()) ? now.toLocalDate() : to;
         List<Day> out = new ArrayList<>();
         for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
-            out.add(day(e, d, now, punches, leave, holidays.get(d), sites, homeSite, corrections));
+            out.add(day(e, d, now, punches, leave, holidays.get(d), sites, homeSite, corrections, overtime));
         }
         return out;
     }
 
-    /** One person's day, with an approved correction applied; Today uses this too. */
+    /** One person's day, with an approved correction applied; Today uses this too (without overtime). */
     static Day day(Emp e, LocalDate d, LocalDateTime now, List<PunchRow> punches, List<Leave> leave, String holiday,
-                   Map<UUID, SiteRef> sites, UUID homeSite, List<CorrectionRow> corrections) {
+                   Map<UUID, SiteRef> sites, UUID homeSite, List<CorrectionRow> corrections, List<OvertimeRow> overtime) {
         List<PunchRow> mine = AttendanceFacts.on(punches, d, e.zone());
         PunchRow firstIn = mine.stream().filter(p -> p.type() == Punch.Type.IN).findFirst().orElse(null);
         SiteRef site = firstIn != null && firstIn.siteId() != null && sites.containsKey(firstIn.siteId())
@@ -154,11 +158,12 @@ class TimesheetService {
             r.status().expectedAt(), r.expectedOut(), r.sessions(), r.firstIn(), r.lastOut(), r.workedMin(),
             r.lateMin(), r.earlyMin(), r.missedOut(), r.stillIn(), mine.stream().anyMatch(p -> "FLAGGED".equals(p.result())),
             r.status().overdue(), r.status().overdue() ? r.status().minutesLate() : 0, c.applied() != null,
-            c.latest() == null ? null : new CorrectionRef(c.latest().id(), c.latest().status(), c.latest().clockIn(), c.latest().clockOut()));
+            c.latest() == null ? null : new CorrectionRef(c.latest().id(), c.latest().status(), c.latest().clockIn(), c.latest().clockOut()),
+            AttendanceFacts.overtimeMinOn(overtime, d));
     }
 
     static Totals totals(List<Day> days) {
-        int expected = 0, worked = 0, minutes = 0, lateCount = 0, lateMin = 0, earlyCount = 0, earlyMin = 0, missed = 0, absent = 0, flagged = 0;
+        int expected = 0, worked = 0, minutes = 0, overtime = 0, lateCount = 0, lateMin = 0, earlyCount = 0, earlyMin = 0, missed = 0, absent = 0, flagged = 0;
         BigDecimal leaveDays = BigDecimal.ZERO;
         for (Day d : days) {
             boolean workingDay = d.offReason() == null;
@@ -179,8 +184,9 @@ class TimesheetService {
             if (d.missedOut()) missed++;
             if (d.absent()) absent++;
             if (d.flagged()) flagged++;
+            overtime += d.overtimeMin();
         }
-        return new Totals(expected, worked, minutes, lateCount, lateMin, earlyCount, earlyMin, missed, absent, leaveDays, flagged);
+        return new Totals(expected, worked, minutes, lateCount, lateMin, earlyCount, earlyMin, missed, absent, leaveDays, flagged, overtime);
     }
 
     /** Defaults to this month so far; refuses an upside-down or over-long range. */

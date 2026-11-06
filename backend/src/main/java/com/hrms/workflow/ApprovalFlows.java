@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Configured approval flows. A request uses the first active flow (lowest position) whose conditions match:
- * type, department and quantity (days for leave). Callers fall back to their own default chain when none match.
+ * type, department and quantity (days for leave, amount for claims, hours for overtime). Callers fall back to their own default chain when none match.
  */
 @Service
 public class ApprovalFlows {
@@ -169,14 +169,115 @@ public class ApprovalFlows {
         return list(subjectType);
     }
 
+    // ---------- choosing a workflow for one leave or claim type ----------
+
+    /**
+     * kind: SWITCH_ON (the workflow was off), ADD_TYPE (the type is added to its conditions), REMOVE_TYPE (the type is
+     * taken out of {@code flow}'s list), MOVE_ABOVE (it's moved above {@code flow}). Warnings: OTHER_TYPES (moving it
+     * changes the order for its other types too), ONLY_SOME (its department or size conditions mean some requests of the
+     * type still go elsewhere), UNUSED ({@code flow} lists only this type and won't be reached for it any more).
+     */
+    public record AssignChange(String kind, String flow) {
+    }
+
+    /** What choosing the workflow does (or did, when applied). No changes: it's already the one used. */
+    public record Assignment(UUID flowId, List<AssignChange> changes, List<AssignChange> warnings, boolean applied) {
+    }
+
+    /** removals: other workflows' new type lists. order: every workflow's id in the new checking order. */
+    record AssignPlan(boolean switchOn, List<UUID> flowTypes, Map<UUID, List<UUID>> removals, List<UUID> order,
+                      List<AssignChange> changes, List<AssignChange> warnings) {
+    }
+
+    /**
+     * Makes {@code flowId} the workflow requests of {@code typeId} use: switched on, listing the type (unless it already
+     * takes any type), and checked before every other switched-on workflow that could take the type. A workflow above it
+     * that lists the type among others loses the type; otherwise the chosen one is moved above it. Other workflows are
+     * never switched off or deleted. {@code all} is in checking order.
+     */
+    static AssignPlan planAssign(List<Flow> all, UUID flowId, UUID typeId) {
+        Flow f = all.stream().filter(x -> x.id().equals(flowId)).findFirst()
+            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "FLOW_NOT_FOUND", "That workflow doesn't exist."));
+        List<AssignChange> changes = new ArrayList<>();
+        List<AssignChange> warnings = new ArrayList<>();
+        if (!f.active()) changes.add(new AssignChange("SWITCH_ON", f.name()));
+        List<UUID> flowTypes = f.typeIds();
+        if (!flowTypes.isEmpty() && !flowTypes.contains(typeId)) {
+            flowTypes = new ArrayList<>(flowTypes);
+            flowTypes.add(typeId);
+            changes.add(new AssignChange("ADD_TYPE", f.name()));
+        }
+        boolean conditional = !f.departmentIds().isEmpty() || f.minQuantity() != null || f.maxQuantity() != null;
+
+        Map<UUID, List<UUID>> removals = new java.util.LinkedHashMap<>();
+        int moveTo = -1;
+        int at = all.indexOf(f);
+        for (int i = 0; i < at; i++) {
+            Flow b = all.get(i);
+            if (!b.active() || !(b.typeIds().isEmpty() || b.typeIds().contains(typeId))) continue;
+            if (b.typeIds().size() > 1) {
+                removals.put(b.id(), b.typeIds().stream().filter(x -> !x.equals(typeId)).toList());
+                changes.add(new AssignChange("REMOVE_TYPE", b.name()));
+                continue;
+            }
+            if (moveTo < 0) {
+                moveTo = i;
+                changes.add(new AssignChange("MOVE_ABOVE", b.name()));
+            }
+            if (!b.typeIds().isEmpty() && !conditional) warnings.add(new AssignChange("UNUSED", b.name()));
+        }
+        List<UUID> order = new ArrayList<>(all.stream().map(Flow::id).toList());
+        if (moveTo >= 0) {
+            order.remove(flowId);
+            order.add(moveTo, flowId);
+            if (flowTypes.size() != 1) warnings.add(new AssignChange("OTHER_TYPES", f.name()));
+        }
+        if (conditional) warnings.add(new AssignChange("ONLY_SOME", f.name()));
+        return new AssignPlan(!f.active(), flowTypes.equals(f.typeIds()) ? null : flowTypes, removals, order, changes, warnings);
+    }
+
+    /** Works out (and unless {@code dryRun}, makes) the changes; see {@link #planAssign}. */
+    @Transactional
+    Assignment assign(UUID actor, String subjectType, UUID typeId, UUID flowId, boolean dryRun) {
+        String typeTable = "CLAIM".equals(subjectType) ? "claim_type" : "LEAVE".equals(subjectType) ? "leave_type" : null;
+        if (typeTable == null) throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_SUBJECT", "Only leave and claim types have workflows to choose.");
+        if (typeId == null || !exists(typeTable, typeId)) throw new ApiException(HttpStatus.BAD_REQUEST, "UNKNOWN_TYPE", "That type doesn't exist.");
+        if (flowId == null) throw new ApiException(HttpStatus.BAD_REQUEST, "FLOW_REQUIRED", "Choose a workflow.");
+        List<Flow> all = list(subjectType);
+        if (all.stream().noneMatch(x -> x.id().equals(flowId) && x.subjectType().equals(subjectType))) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "FLOW_NOT_FOUND", "That workflow doesn't exist.");
+        }
+        AssignPlan plan = planAssign(all, flowId, typeId);
+        if (dryRun || plan.changes().isEmpty()) return new Assignment(flowId, plan.changes(), plan.warnings(), false);
+
+        if (plan.switchOn()) jdbc.sql("update approval_flow set active = true, updated_at = now() where id = :id").param("id", flowId).update();
+        if (plan.flowTypes() != null) setTypes(flowId, plan.flowTypes());
+        plan.removals().forEach(this::setTypes);
+        for (int i = 0; i < plan.order().size(); i++) {
+            jdbc.sql("update approval_flow set position = :p where id = :id").param("p", i).param("id", plan.order().get(i)).update();
+        }
+        audit.record(actor, "APPROVAL_FLOW_ASSIGNED", "approval_flow", flowId,
+            Map.of("subject", subjectType, "type", typeId.toString(), "changes", plan.changes().toString()));
+        return new Assignment(flowId, plan.changes(), plan.warnings(), true);
+    }
+
+    private void setTypes(UUID flowId, List<UUID> types) {
+        jdbc.sql("update approval_flow set type_ids = cast(:types as uuid[]), updated_at = now() where id = :id")
+            .param("types", arrayLiteral(types)).param("id", flowId).update();
+    }
+
     // ---------- validation ----------
 
     private void validate(String subjectType, FlowInput in) {
         boolean claim = "CLAIM".equals(subjectType);
-        String unit = claim ? "amount" : "days";
+        boolean overtime = "OVERTIME".equals(subjectType);
+        String unit = claim ? "amount" : overtime ? "hours" : "days";
         if ("CORRECTION".equals(subjectType)
             && ((in.typeIds() != null && !in.typeIds().isEmpty()) || in.minQuantity() != null || in.maxQuantity() != null)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_CONDITION", "Correction workflows can only be matched by department.");
+        }
+        if (overtime && in.typeIds() != null && !in.typeIds().isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_CONDITION", "Overtime workflows are matched by department and hours only.");
         }
         if (in.steps() == null || in.steps().isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "STEPS_REQUIRED", "Add at least one approval step.");
@@ -188,12 +289,12 @@ public class ApprovalFlows {
             throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", "The minimum " + unit + " is more than the maximum.");
         }
         if ((in.minQuantity() != null && in.minQuantity().signum() < 0) || (in.maxQuantity() != null && in.maxQuantity().signum() < 0)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", (claim ? "Amounts" : "Days") + " can't be negative.");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", (claim ? "Amounts" : overtime ? "Hours" : "Days") + " can't be negative.");
         }
         for (BigDecimal q : Arrays.asList(in.minQuantity(), in.maxQuantity())) {
             if (q != null && (q.scale() > 2 || q.compareTo(new BigDecimal("9999999999")) > 0)) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "BAD_RANGE", claim
-                    ? "Use an amount with at most two decimal places." : "Use whole or half days.");
+                    ? "Use an amount with at most two decimal places." : overtime ? "Use quarter hours." : "Use whole or half days.");
             }
         }
         // Types are checked through RLS against the right table, so ids from another company or module count as missing.

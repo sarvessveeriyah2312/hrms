@@ -2,6 +2,7 @@ package com.hrms.attendance;
 
 import com.hrms.shared.security.DataScope;
 import com.hrms.shared.security.EmployeeScope;
+import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -51,6 +52,10 @@ class AttendanceFacts {
 
     /** A correction request for one day; times are local. Only APPROVED ones change the day. */
     record CorrectionRow(UUID id, UUID employeeId, LocalDate date, LocalTime clockIn, LocalTime clockOut, String status) {
+    }
+
+    /** Approved overtime on one day: hours at a rate. */
+    record OvertimeRow(UUID employeeId, LocalDate date, BigDecimal hours, BigDecimal rate) {
     }
 
     /** Approved leave on one day; morning and afternoon on the same day make a full day. */
@@ -177,6 +182,28 @@ class AttendanceFacts {
             if ("APPROVED".equals(c.status())) applied = c;
         }
         return new CorrectionsOn(applied, latest);
+    }
+
+    /** Approved overtime in the range, by person. */
+    Map<UUID, List<OvertimeRow>> approvedOvertime(List<UUID> ids, LocalDate from, LocalDate to) {
+        if (ids.isEmpty()) return Map.of();
+        return jdbc.sql("""
+                select employee_id, work_date, hours, rate from overtime_request
+                where employee_id in (:ids) and work_date between :from and :to and status = 'APPROVED'
+                order by work_date, created_at""")
+            .param("ids", ids).param("from", from).param("to", to)
+            .query((rs, i) -> new OvertimeRow(rs.getObject("employee_id", UUID.class), rs.getObject("work_date", LocalDate.class),
+                rs.getBigDecimal("hours"), rs.getBigDecimal("rate")))
+            .list().stream().collect(Collectors.groupingBy(OvertimeRow::employeeId));
+    }
+
+    /** Approved overtime on a day, in minutes. */
+    static int overtimeMinOn(List<OvertimeRow> rows, LocalDate day) {
+        int min = 0;
+        for (OvertimeRow o : rows == null ? List.<OvertimeRow>of() : rows) {
+            if (o.date().equals(day)) min += o.hours().multiply(BigDecimal.valueOf(60)).intValue();
+        }
+        return min;
     }
 
     Map<LocalDate, String> holidays(LocalDate from, LocalDate to) {

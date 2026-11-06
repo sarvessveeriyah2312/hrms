@@ -11,6 +11,13 @@ export const approvals = {
     whatChange: 'What should they change?', whyReject: 'Why are you rejecting it?',
     changeExample: 'e.g. Attach the clinic’s MC, not a photo', theySee: 'They’ll see this',
     comment: 'Comment', commentHint: 'Optional when approving; needed to send back or reject',
+    many: {
+      selectAll: 'Select all {{count}} overtime', clear: 'Clear selection',
+      chosen_one: '{{count}} overtime request selected', chosen_other: '{{count}} overtime requests selected',
+      approve: 'Approve {{count}}', commentHint: 'Optional, sent with each approval',
+      someFailed_one: '{{count}} request wasn’t approved:', someFailed_other: '{{count}} requests weren’t approved:',
+      pick: 'Select {{title}} from {{who}}',
+    },
   },
   req: {
     employee: 'Employee', dates: 'Dates', workingDays: 'Working days', leftIfApproved: 'Left if approved', daysOf: '{{left}} of {{total}}',

@@ -3,11 +3,12 @@ import type { timesheet as en } from '../en/timesheet';
 
 export const timesheet: Shape<typeof en> = {
   attendance: {
-    tabs: { today: 'Hari ini', team: 'Lembaran masa', mine: 'Lembaran masa saya' },
+    tabs: { today: 'Hari ini', team: 'Lembaran masa', mine: 'Lembaran masa saya', overtime: 'Kerja lebih masa' },
     subtitle: {
       today: 'Siapa yang hadir, lewat, belum masuk, bercuti atau tidak bekerja.',
       team: 'Jam bekerja, kelewatan, pulang awal dan daftar keluar yang tertinggal, mengikut orang.',
       mine: 'Daftar masuk anda mengikut hari, dengan jam bekerja dan apa-apa yang mungkin ditanya oleh HR.',
+      overtime: 'Mohon bayaran untuk jam tambahan yang anda bekerja, dan ikuti permohonan anda.',
     },
   },
   timesheet: {

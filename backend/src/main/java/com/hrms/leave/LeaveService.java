@@ -42,11 +42,14 @@ public class LeaveService {
      * {@code source}: POLICY (default, service tier or pro-rating) or MANUAL (set by HR for this person).
      * {@code basis} explains the entitled figure in words; {@code carriedSource} is MANUAL, YEAR_END or null.
      * {@code carried} is what still counts; {@code carriedExpired} what was lost on {@code carriedExpiresOn}.
+     * {@code earned}: leave earned this year on top of the entitlement (e.g. time off for overtime) that still counts;
+     * {@code earnedExpired}: earned leave that expired unused.
      */
     public record Balance(UUID leaveTypeId, String name, String tone, boolean trackBalance, BigDecimal entitled,
                           BigDecimal carried, BigDecimal used, BigDecimal pending, BigDecimal available,
                           String source, String basis, BigDecimal policyDays, String carriedSource, String note,
-                          BigDecimal carriedExpired, LocalDate carriedExpiresOn, BigDecimal planned) {
+                          BigDecimal carriedExpired, LocalDate carriedExpiresOn, BigDecimal planned, BigDecimal earned,
+                          BigDecimal earnedExpired) {
     }
 
     public record Preview(BigDecimal days, List<Holiday> holidays, List<Integer> workDays) {
@@ -199,6 +202,8 @@ public class LeaveService {
         }
         record ByDate(UUID leaveTypeId, BigDecimal days) {
         }
+        record Credit(UUID leaveTypeId, BigDecimal days, LocalDate expiresOn) {
+        }
         LocalDate joinDate = jdbc.sql("select join_date from employee where id = :emp").param("emp", employeeId)
             .query(LocalDate.class).optional().orElse(null);
         UUID exclude = excludeRequest == null ? new UUID(0, 0) : excludeRequest;
@@ -210,6 +215,10 @@ public class LeaveService {
                 from leave_request where employee_id = :emp and extract(year from start_date) = :year and id <> :exclude
                 group by leave_type_id""")
             .param("emp", employeeId).param("year", year).param("exclude", exclude).query(Usage.class).list();
+        List<Credit> credits = jdbc.sql("""
+                select leave_type_id, days, expires_on from leave_credit
+                where employee_id = :emp and extract(year from earned_on) = :year""")
+            .param("emp", employeeId).param("year", year).query(Credit.class).list();
         List<Manual> manual = jdbc.sql("""
                 select leave_type_id, entitled, carried, carried_source, note from leave_entitlement
                 where employee_id = :emp and year = :year""")
@@ -223,7 +232,8 @@ public class LeaveService {
                 Manual m = manual.stream().filter(x -> x.leaveTypeId().equals(t.id())).findFirst().orElse(null);
                 if (!t.trackBalance()) {
                     return new Balance(t.id(), t.name(), t.tone(), false, BigDecimal.ZERO, BigDecimal.ZERO, u.used(), u.pending(),
-                        null, "POLICY", "No yearly limit", BigDecimal.ZERO, null, null, BigDecimal.ZERO, null, u.planned());
+                        null, "POLICY", "No yearly limit", BigDecimal.ZERO, null, null, BigDecimal.ZERO, null, u.planned(),
+                        BigDecimal.ZERO, BigDecimal.ZERO);
                 }
                 var policy = EntitlementPolicy.compute(t.defaultDays(), t.serviceTiers(), t.proRate(), joinDate, year);
                 boolean overridden = m != null && m.entitled() != null;
@@ -241,11 +251,28 @@ public class LeaveService {
                         .param("exclude", exclude).query(BigDecimal.class).single();
                 }
                 var carried = EntitlementPolicy.carried(carriedIn, t.carryExpiryMonth(), year, usedByExpiry, asOf);
+                // Earned leave (e.g. time off for overtime): what expired unused no longer counts.
+                List<Credit> mine = credits.stream().filter(c -> c.leaveTypeId().equals(t.id())).toList();
+                BigDecimal earnedTotal = mine.stream().map(Credit::days).reduce(BigDecimal.ZERO, BigDecimal::add);
+                List<Credit> expired = mine.stream().filter(c -> c.expiresOn() != null && asOf.isAfter(c.expiresOn())).toList();
+                BigDecimal usedByEarnedExpiry = BigDecimal.ZERO;
+                if (!expired.isEmpty()) {
+                    LocalDate latest = expired.stream().map(Credit::expiresOn).max(LocalDate::compareTo).orElseThrow();
+                    usedByEarnedExpiry = jdbc.sql("""
+                            select coalesce(sum(days), 0) from leave_request
+                            where employee_id = :emp and leave_type_id = :type and status in ('APPROVED', 'PENDING')
+                              and extract(year from start_date) = :year and start_date <= :expiry and id <> :exclude""")
+                        .param("emp", employeeId).param("type", t.id()).param("year", year).param("expiry", latest)
+                        .param("exclude", exclude).query(BigDecimal.class).single();
+                }
+                var earned = EntitlementPolicy.earned(earnedTotal,
+                    expired.stream().map(Credit::days).reduce(BigDecimal.ZERO, BigDecimal::add), usedByEarnedExpiry, carried.usable());
+
                 String basis = overridden ? "Set by HR" + (m.note() != null ? ": " + m.note() : "") : policy.basis();
                 return new Balance(t.id(), t.name(), t.tone(), true, entitled, carried.usable(), u.used(), u.pending(),
-                    entitled.add(carried.usable()).subtract(u.used()).subtract(u.pending()),
+                    entitled.add(carried.usable()).add(earned.usable()).subtract(u.used()).subtract(u.pending()),
                     overridden ? "MANUAL" : "POLICY", basis, policy.days(), m == null ? null : m.carriedSource(),
-                    m == null ? null : m.note(), carried.expired(), carried.expiresOn(), u.planned());
+                    m == null ? null : m.note(), carried.expired(), carried.expiresOn(), u.planned(), earned.usable(), earned.expired());
             })
             .toList();
     }

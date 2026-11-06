@@ -70,6 +70,21 @@ final class EntitlementPolicy {
         return new Carried(usable, carried.subtract(usable), expiresOn);
     }
 
+    record Earned(BigDecimal usable, BigDecimal expired) {
+    }
+
+    /**
+     * Earned leave (e.g. time off for overtime) after expiry. Carried days are used first, then earned leave, then the
+     * entitlement; so of the leave taken or booked on or before the latest expiry date ({@code usedByExpiry}), what's
+     * beyond the carried days came out of earned leave before it expired. The rest of the expired leave is lost.
+     */
+    static Earned earned(BigDecimal total, BigDecimal expired, BigDecimal usedByExpiry, BigDecimal carriedUsable) {
+        if (expired.signum() == 0) return new Earned(total, BigDecimal.ZERO);
+        BigDecimal usedInTime = expired.min(usedByExpiry.subtract(carriedUsable).max(BigDecimal.ZERO));
+        BigDecimal lost = expired.subtract(usedInTime);
+        return new Earned(total.subtract(lost), lost);
+    }
+
     /** Rounds down to the nearest 0.5. */
     static BigDecimal halfDayFloor(BigDecimal value) {
         return value.multiply(BigDecimal.TWO).setScale(0, RoundingMode.DOWN).divide(BigDecimal.TWO, 1, RoundingMode.UNNECESSARY);

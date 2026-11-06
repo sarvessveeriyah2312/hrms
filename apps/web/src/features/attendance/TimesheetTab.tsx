@@ -142,6 +142,7 @@ export function TeamTimesheets() {
             ) },
             { key: 'days', header: t('timesheet.daysWorked'), align: 'end', cell: (p) => t('timesheet.ofDays', { n: p.totals.daysWorked, of: p.totals.expectedDays }) },
             { key: 'hours', header: t('timesheet.hours'), align: 'end', cell: (p) => duration(t, p.totals.workedMin) },
+            { key: 'overtime', header: t('overtime.column'), align: 'end', cell: (p) => duration(t, p.totals.overtimeMin) },
             { key: 'late', header: t('timesheet.late'), align: 'end', cell: (p) => countAndTime(t, p.totals.lateCount, p.totals.lateMin),
               cellClass: (p) => (p.totals.lateCount > 0 ? 'is-warning' : undefined) },
             { key: 'early', header: t('timesheet.leftEarly'), align: 'end', cell: (p) => countAndTime(t, p.totals.earlyCount, p.totals.earlyMin),
@@ -216,7 +217,8 @@ function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack, onFix, onO
 
       <div className="grid grid--stats">
         <StatCard icon="clock" label={t('timesheet.hoursWorked')} value={x ? duration(t, x.workedMin) : '–'}
-          note={x && t('timesheet.ofDaysLong', { n: x.daysWorked, of: x.expectedDays })} />
+          note={x && [t('timesheet.ofDaysLong', { n: x.daysWorked, of: x.expectedDays }),
+            x.overtimeMin > 0 && t('overtime.onDay', { time: duration(t, x.overtimeMin) })].filter(Boolean).join(' · ')} />
         <StatCard icon="users" label={t('timesheet.late')} value={x ? x.lateCount : '–'}
           note={x && t('timesheet.timesTotal', { time: duration(t, x.lateMin) })} />
         <StatCard icon="sun" label={t('timesheet.leftEarly')} value={x ? x.earlyCount : '–'}
@@ -312,6 +314,7 @@ function DayNote({ day: d }: { day: TimesheetDay }) {
   const { t } = useTranslation();
   const parts = [
     d.corrected && t('correction.corrected'),
+    d.overtimeMin > 0 && t('overtime.onDay', { time: duration(t, d.overtimeMin) }),
     d.holiday,
     d.leaveType && (d.leavePart === 'AM' ? t('today.leaveAm', { type: d.leaveType })
       : d.leavePart === 'PM' ? t('today.leavePm', { type: d.leaveType }) : d.leaveType),

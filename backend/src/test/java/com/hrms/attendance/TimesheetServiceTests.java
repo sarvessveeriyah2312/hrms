@@ -161,6 +161,20 @@ class TimesheetServiceTests {
     }
 
     @Test
+    void approvedOvertimeCountsOnItsDayAndInTheTotals() {
+        when(facts.approvedOvertime(anyList(), any(), any())).thenReturn(Map.of(ME, List.of(
+            new AttendanceFacts.OvertimeRow(ME, LocalDate.of(2026, 11, 3), new BigDecimal("2.50"), new BigDecimal("1.5")),
+            new AttendanceFacts.OvertimeRow(ME, LocalDate.of(2026, 11, 3), new BigDecimal("1.00"), new BigDecimal("2.0")),
+            new AttendanceFacts.OvertimeRow(ME, LocalDate.of(2026, 11, 4), new BigDecimal("0.25"), new BigDecimal("1.0")))));
+
+        var sheet = service.sheet(ME, null, null);
+        assertThat(sheet.days().get(2).overtimeMin()).isEqualTo(210);
+        assertThat(sheet.days().get(3).overtimeMin()).isEqualTo(15);
+        assertThat(sheet.days().get(1).overtimeMin()).isZero();
+        assertThat(sheet.totals().overtimeMin()).isEqualTo(225);
+    }
+
+    @Test
     void aPastDayWithNoClockInIsAbsent() {
         var t = service.sheet(ME, null, null).totals();
         assertThat(t.absent()).isEqualTo(3);   // Mon–Wed; Sunday is a rest day and Thursday isn't over

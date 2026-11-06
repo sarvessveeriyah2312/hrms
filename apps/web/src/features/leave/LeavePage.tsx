@@ -220,6 +220,8 @@ function balanceNote(b: LeaveBalance, today: string) {
   if (Number(b.carriedExpired) > 0) parts.push(t('leave.carryExpired', { n: fmt(b.carriedExpired), date: MONTH(b.carriedExpiresOn!) }));
   else if (Number(b.carried) > 0 && b.carriedExpiresOn && b.carriedExpiresOn >= today) parts.push(t('leave.carryUseBy', { n: fmt(b.carried), date: MONTH(b.carriedExpiresOn) }));
   else if (Number(b.carried) > 0) parts.push(t('leave.carryIncludes', { n: fmt(b.carried) }));
+  if (Number(b.earned) > 0) parts.push(t('leave.earnedIncludes', { n: fmt(b.earned) }));
+  if (Number(b.earnedExpired) > 0) parts.push(t('leave.earnedExpired', { n: fmt(b.earnedExpired) }));
   parts.push(b.basis);
   return parts.join(' · ');
 }

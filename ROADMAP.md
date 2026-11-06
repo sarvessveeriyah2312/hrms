@@ -23,7 +23,7 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 - [x] **Today (web, managers):** who's in, late, not in yet, on leave or off, by site, within the attendance:view scope; merged with approved leave. · M
 - [x] **Timesheets:** each person's clock-ins by day, worked hours, late arrival, early leave and missed clock-outs; for yourself and your team. · M
 - [x] **Attendance corrections** ("I forgot to clock out"): request with reason → approval workflows (new subject type) → timesheet updated. · M
-- [ ] **Overtime requests** with rates (1.0×, 1.5×, 2.0×, 3.0×) and hours, through approval workflows; approvers can approve several at once. · M
+- [x] **Overtime requests** with rates (1.0×, 1.5×, 2.0×, 3.0×) and hours, through approval workflows; approvers can approve several at once. · M
 - [ ] **Attendance report** + "See attendance reports" permission (lateness, absence, hours, overtime by person and month), with filters and CSV. · M
 - [ ] **Lock a period** before payroll: HR locks a month so timesheets, corrections and overtime can't change; unlock with a reason. · S
 
@@ -64,7 +64,7 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 
 ## Phase 6 · Leave and claims, round 2
 
-- [ ] **Leave:** hourly leave (15-minute steps), time off in lieu, partial cancellation of some dates, "cancel past leave" setting, approver may allow over quota, up to 3 attachments, extra people to notify. · M
+- [ ] **Leave:** hourly leave (15-minute steps), time off in lieu for things other than overtime (overtime is done), partial cancellation of some dates, "cancel past leave" setting, approver may allow over quota, up to 3 attachments, extra people to notify. · M
 - [ ] **Flexi-work (work from home) requests** with a monthly quota and approval; a flexi day relaxes the geofence. · M
 - [ ] **Claims:** yearly limits and balances, claim groups, pro-rating for joiners, foreign currency with exchange rates, GST fields, cost centres, drafts, approvers adjust the amount, approver view of entitlement. · L
 - [ ] **Receipt reading (OCR)** to fill amount, date and merchant. · M

@@ -110,7 +110,7 @@ class LeaveReportController {
                     b.trackBalance() ? b.entitled() : null, b.trackBalance() ? b.carried() : null, b.used(), b.pending(),
                     b.available(), b.basis()));
                 totals.merge(b.leaveTypeId(),
-                    new Total(b.leaveTypeId(), b.name(), b.trackBalance() ? b.entitled().add(b.carried()) : BigDecimal.ZERO,
+                    new Total(b.leaveTypeId(), b.name(), b.trackBalance() ? b.entitled().add(b.carried()).add(b.earned()) : BigDecimal.ZERO,
                         b.used(), b.pending(), b.used().signum() > 0 ? 1 : 0),
                     (x, y) -> new Total(x.leaveTypeId(), x.leaveType(), x.entitled().add(y.entitled()), x.used().add(y.used()),
                         x.pending().add(y.pending()), x.people() + y.people()));

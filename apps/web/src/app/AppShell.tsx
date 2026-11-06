@@ -39,6 +39,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: '/app/admin/roles', key: 'roles', icon: 'shield', show: (u) => can(u, 'admin:roles') },
   { to: '/app/admin/company', key: 'company', icon: 'building', show: (u) => can(u, 'admin:company') },
   { to: '/app/attendance/sites', key: 'sites', icon: 'pin', show: (u) => hasModule(u, 'attendance') && can(u, 'attendance:manage') },
+  { to: '/app/attendance/overtime-rules', key: 'overtimeRules', icon: 'star', show: (u) => hasModule(u, 'attendance') && can(u, 'attendance:manage') },
   { to: '/app/leave/settings', key: 'leaveSettings', icon: 'calendar', show: (u) => hasModule(u, 'leave') && can(u, 'leave:manage') },
   { to: '/app/claims/settings', key: 'claimSettings', icon: 'receipt', show: (u) => hasModule(u, 'claims') && can(u, 'claims:manage') },
   { to: '/app/admin/workflows', key: 'workflows', icon: 'switch', show: (u) => can(u, 'workflow:manage') },

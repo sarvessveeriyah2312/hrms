@@ -32,7 +32,7 @@ class SearchController {
     /**
      * kind: PERSON, LEAVE, CLAIM, USER, ROLE, DEPARTMENT, LEAVE_TYPE, CLAIM_TYPE, WORKFLOW or HOLIDAY.
      * {@code link} is the path in the web app that opens it. {@code tag} is a small extra value for the kind
-     * (a workflow's subject: LEAVE or CLAIM).
+     * (a workflow's subject: LEAVE, CLAIM, CORRECTION or OVERTIME).
      */
     record Hit(String kind, String id, String title, String meta, String status, LocalDate date, LocalDate endDate,
                BigDecimal amount, String currency, String tag, String link) {
@@ -234,11 +234,21 @@ class SearchController {
             .param("q", like).param("n", PER_KIND).query(Row.class).list().stream()
             .map(r -> new Hit("WORKFLOW", r.id().toString(), r.name(), r.description(), r.active() ? null : "OFF",
                 null, null, null, null, r.subjectType(),
-                "/app/admin/workflows?" + ("CLAIM".equals(r.subjectType()) ? "for=claims&" : "") + "open=" + r.id()))
+                "/app/admin/workflows?" + forParam(r.subjectType()) + "open=" + r.id()))
             .toList();
     }
 
     // ---------- helpers ----------
+
+    /** Opens the workflows page on the right subject. */
+    private static String forParam(String subjectType) {
+        return switch (subjectType) {
+            case "CLAIM" -> "for=claims&";
+            case "CORRECTION" -> "for=corrections&";
+            case "OVERTIME" -> "for=overtime&";
+            default -> "";
+        };
+    }
 
     private static String join(String... parts) {
         List<String> out = new ArrayList<>();

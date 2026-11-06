@@ -5,12 +5,14 @@ import { PageHeader, Tabs, type TabItem } from '../../components/app/kit';
 import { PlaceholderPage } from '../../app/PlaceholderPage';
 import { TodayTab } from './TodayTab';
 import { MyTimesheet, TeamTimesheets } from './TimesheetTab';
+import { MyOvertime } from './Overtime';
 
-type Tab = 'today' | 'team' | 'mine';
+type Tab = 'today' | 'team' | 'mine' | 'overtime';
 
 /**
  * /app/attendance. attendance:view: Today; attendance:timesheets: Team timesheets (each within its scope); anyone with
- * an employee record: your own timesheet. The open tab is in the URL (?tab=).
+ * an employee record: your own timesheet; attendance:clock with an employee record: your overtime requests. The open tab
+ * is in the URL (?tab=).
  */
 export function AttendancePage() {
   const { t } = useTranslation();
@@ -22,13 +24,15 @@ export function AttendancePage() {
     ...(canView ? [{ key: 'today' as const, label: t('attendance.tabs.today'), icon: 'clock' as const }] : []),
     ...(canTimesheets ? [{ key: 'team' as const, label: t('attendance.tabs.team'), icon: 'users' as const }] : []),
     ...(user?.employeeId ? [{ key: 'mine' as const, label: t('attendance.tabs.mine'), icon: 'calendar' as const }] : []),
+    ...(user?.employeeId && can(user, 'attendance:clock') ? [{ key: 'overtime' as const, label: t('attendance.tabs.overtime'), icon: 'star' as const }] : []),
   ];
   if (tabs.length === 0) return <PlaceholderPage module="attendance" />;
 
   const tab = tabs.find((x) => x.key === params.get('tab'))?.key ?? tabs[0].key;
   // Switching tabs drops the other tab's filters.
   const setTab = (key: string) => setParams(key === tabs[0].key ? {} : { tab: key }, { replace: true });
-  const content = tab === 'today' ? <TodayTab /> : tab === 'team' ? <TeamTimesheets /> : <MyTimesheet />;
+  const content = tab === 'today' ? <TodayTab /> : tab === 'team' ? <TeamTimesheets />
+    : tab === 'overtime' ? <MyOvertime /> : <MyTimesheet />;
 
   return (
     <>

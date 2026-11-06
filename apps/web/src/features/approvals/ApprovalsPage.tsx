@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { InboxItem } from '@hrms/api-client';
 import { api } from '../../lib/api';
@@ -10,6 +10,7 @@ import { moduleMeta } from '../../lib/modules';
 import { Glyph } from '../../components/Glyph';
 import { Card, EmptyState, List, PageHeader, Status } from '../../components/app/kit';
 import { CorrectionFacts } from '../attendance/Corrections';
+import { OvertimeFacts } from '../attendance/Overtime';
 import { Panel } from '../../components/app/Panel';
 import { Pager } from '../../components/app/Pager';
 import { usePaging } from '../../lib/paging';
@@ -41,6 +42,15 @@ export function ApprovalsPage() {
   const others = items.filter((i) => i.actingAs === 'OVERRIDE');
   const minePaging = usePaging(mine);
   const othersPaging = usePaging(others, { pageSize: 10 });
+  // Overtime can be approved several at a time (only what's waiting for you, not ones you'd step in on).
+  const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const overtime = mine.filter((i) => i.subjectType === 'OVERTIME');
+  const selected = overtime.filter((i) => chosen.has(i.instanceId));
+  const toggle = (id: string) => setChosen((c) => {
+    const next = new Set(c);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
 
   return (
     <>
@@ -53,12 +63,24 @@ export function ApprovalsPage() {
         </p>
       )}
 
-      <Card title={t('approvals.waitingForYou')} count={mine.length}>
+      <Card
+        title={t('approvals.waitingForYou')}
+        count={mine.length}
+        action={overtime.length > 1 && (
+          <button type="button" className="btn small" onClick={() => setChosen(new Set(selected.length === overtime.length ? [] : overtime.map((i) => i.instanceId)))}>
+            {selected.length === overtime.length ? t('approvals.many.clear') : t('approvals.many.selectAll', { count: overtime.length })}
+          </button>
+        )}
+      >
+        {selected.length > 0 && <ApproveMany items={selected} onDone={() => setChosen(new Set())} />}
         {inbox.data && mine.length === 0 ? (
           <EmptyState icon="inbox" tone="green" title={t('approvals.empty')}>{t('approvals.emptyBody')}</EmptyState>
         ) : (
           <>
-            <List>{minePaging.visible.map((i) => <InboxRow key={i.instanceId} item={i} onView={() => setViewing(i)} />)}</List>
+            <List>{minePaging.visible.map((i) => (
+              <InboxRow key={i.instanceId} item={i} onView={() => setViewing(i)}
+                selected={i.subjectType === 'OVERTIME' ? chosen.has(i.instanceId) : undefined} onSelect={() => toggle(i.instanceId)} />
+            ))}</List>
             <Pager {...minePaging} label={t('approvals.waitingForYou')} />
           </>
         )}
@@ -77,6 +99,56 @@ export function ApprovalsPage() {
   );
 }
 
+/** Everything a decision can change. */
+async function refreshAfterDeciding(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({ queryKey: ['approvals'] });
+  await queryClient.invalidateQueries({ queryKey: ['leave'] });
+  await queryClient.invalidateQueries({ queryKey: ['claims'] });
+  await queryClient.invalidateQueries({ queryKey: ['attendance'] });
+}
+
+/** Approve the chosen overtime requests with one optional comment; lists any that couldn't be approved. */
+function ApproveMany({ items, onDone }: { items: InboxItem[]; onDone: () => void }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [comment, setComment] = useState('');
+  const [failed, setFailed] = useState<{ title: string; message: string }[]>([]);
+  const approve = useMutation({
+    mutationFn: () => api.approvals.approveMany(items.map((i) => i.instanceId), comment.trim() || undefined),
+    onSuccess: async (result) => {
+      setFailed(result.failed.map((f) => ({ title: items.find((i) => i.instanceId === f.instanceId)?.title ?? '', message: f.message })));
+      setComment('');
+      await refreshAfterDeciding(queryClient);
+      if (result.failed.length === 0) onDone();
+    },
+  });
+
+  return (
+    <form className="inbox-many" onSubmit={(e) => { e.preventDefault(); approve.mutate(); }}>
+      <p className="inbox-many__count" role="status">
+        {t('approvals.many.chosen', { count: items.length })}
+      </p>
+      {approve.error && <p className="form-error" role="alert">{errorText(approve.error)}</p>}
+      {failed.length > 0 && (
+        <div className="form-error" role="alert">
+          <p>{t('approvals.many.someFailed', { count: failed.length })}</p>
+          <ul>{failed.map((f, n) => <li key={n}>{f.title}: {f.message}</li>)}</ul>
+        </div>
+      )}
+      <div className="inbox-many__row">
+        <label className="field">
+          {t('approvals.comment')}
+          <input value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} placeholder={t('approvals.many.commentHint')} />
+        </label>
+        <button type="submit" className="btn primary small" disabled={approve.isPending}>
+          {t('approvals.many.approve', { count: items.length })}
+        </button>
+        <button type="button" className="btn small" onClick={onDone} disabled={approve.isPending}>{t('approvals.many.clear')}</button>
+      </div>
+    </form>
+  );
+}
+
 function useDecide(onDone?: () => void) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -85,16 +157,16 @@ function useDecide(onDone?: () => void) {
         : d.action === 'return' ? api.approvals.sendBack(d.item.instanceId, d.comment ?? '')
           : api.approvals.reject(d.item.instanceId, d.comment ?? ''),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['approvals'] });
-      await queryClient.invalidateQueries({ queryKey: ['leave'] });
-      await queryClient.invalidateQueries({ queryKey: ['claims'] });
-      await queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      await refreshAfterDeciding(queryClient);
       onDone?.();
     },
   });
 }
 
-function InboxRow({ item, onView }: { item: InboxItem; onView: () => void }) {
+/** selected: shown with a checkbox to approve it along with others (overtime); undefined: no checkbox. */
+function InboxRow({ item, onView, selected, onSelect }: {
+  item: InboxItem; onView: () => void; selected?: boolean; onSelect?: () => void;
+}) {
   const { t } = useTranslation();
   const [mode, setMode] = useState<'reject' | 'return' | null>(null);
   const [reason, setReason] = useState('');
@@ -106,6 +178,10 @@ function InboxRow({ item, onView }: { item: InboxItem; onView: () => void }) {
   return (
     <li className="inbox-row">
       <div className="ui-row">
+        {selected !== undefined && (
+          <input type="checkbox" className="inbox-row__pick" checked={selected} onChange={onSelect}
+            aria-label={t('approvals.many.pick', { title: item.title, who: item.requester })} />
+        )}
         <span className="ui-row__lead"><Glyph icon={meta.icon} tone={toTone(item.tone, meta.tone)} /></span>
         <span className="ui-row__text">
           <span className="ui-row__title">{item.title}</span>
@@ -180,11 +256,16 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
     queryFn: () => api.attendance.corrections.detail(item.subjectId),
     enabled: item.subjectType === 'CORRECTION',
   });
+  const overtime = useQuery({
+    queryKey: ['attendance', 'overtime', item.subjectId],
+    queryFn: () => api.attendance.overtime.detail(item.subjectId),
+    enabled: item.subjectType === 'OVERTIME',
+  });
   const [comment, setComment] = useState('');
   const decide = useDecide(onClose);
   const r = detail.data?.request;
-  const timeline = detail.data?.timeline ?? claim.data?.timeline ?? correction.data?.timeline;
-  const loadError = detail.error ?? claim.error ?? correction.error;
+  const timeline = detail.data?.timeline ?? claim.data?.timeline ?? correction.data?.timeline ?? overtime.data?.timeline;
+  const loadError = detail.error ?? claim.error ?? correction.error ?? overtime.error;
   const b = balance.data?.find((x) => x.leaveTypeId === r?.leaveTypeId);
 
   return (
@@ -192,6 +273,7 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
       {loadError && <p className="form-error" role="alert">{errorText(loadError)}</p>}
       {claim.data && <ClaimFacts claim={claim.data.claim} showEmployee />}
       {correction.data && <CorrectionFacts detail={correction.data} showEmployee />}
+      {overtime.data && <OvertimeFacts detail={overtime.data} showEmployee />}
       {r && (
         <dl className="facts">
           <dt>{t('req.employee')}</dt><dd>{r.employeeName} ({item.requesterNo})</dd>

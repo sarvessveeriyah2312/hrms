@@ -268,6 +268,10 @@ export interface LeaveBalance {
   carriedExpiresOn: string | null;
   /** Days in the person's planner (drafts): not sent, not taken off the balance. */
   planned: number;
+  /** Leave earned this year on top of the entitlement (e.g. time off for overtime) that still counts. */
+  earned: number;
+  /** Earned leave that expired unused. */
+  earnedExpired: number;
 }
 
 export interface YearEndResult {
@@ -331,7 +335,18 @@ export interface FlowStep {
 }
 
 /** What a workflow is for. */
-export type FlowSubject = 'LEAVE' | 'CLAIM' | 'CORRECTION';
+export type FlowSubject = 'LEAVE' | 'CLAIM' | 'CORRECTION' | 'OVERTIME';
+
+/**
+ * Choosing a workflow for a type. Changes: SWITCH_ON, ADD_TYPE, REMOVE_TYPE (from flow), MOVE_ABOVE (flow).
+ * Warnings: OTHER_TYPES, ONLY_SOME, UNUSED (flow). No changes: it's already the one used.
+ */
+export interface FlowAssignment {
+  flowId: string;
+  changes: { kind: 'SWITCH_ON' | 'ADD_TYPE' | 'REMOVE_TYPE' | 'MOVE_ABOVE'; flow: string }[];
+  warnings: { kind: 'OTHER_TYPES' | 'ONLY_SOME' | 'UNUSED'; flow: string }[];
+  applied: boolean;
+}
 
 export interface ApprovalFlow {
   id: string;
@@ -622,6 +637,8 @@ export interface TimesheetDay {
   corrected: boolean;
   /** The day's latest correction request, if any. */
   correction: { id: string; status: CorrectionStatus; clockIn: string | null; clockOut: string | null } | null;
+  /** Approved overtime on the day, any rate. */
+  overtimeMin: number;
 }
 
 // ---------- attendance corrections ----------
@@ -646,6 +663,103 @@ export interface CorrectionDetail {
   timeline: TimelineStep[];
 }
 
+// ---------- overtime ----------
+
+export type OvertimeStatus = CorrectionStatus;
+
+/** The kind of day overtime is worked on, which sets its rate. */
+export type OvertimeDayKind = 'WORKING' | 'REST' | 'HOLIDAY';
+
+export type OvertimeCompensation = 'PAY' | 'TIME_OFF';
+
+/**
+ * Extra hours worked on a day (quarter hours). rate: needed when paid, or when the rule applies it to time off.
+ * compensation: needed only when the rule lets the employee choose.
+ */
+export interface OvertimeInput { date: string; hours: number; rate: number | null; reason: string; compensation: OvertimeCompensation | null }
+
+export interface OvertimeRequest {
+  id: string; employeeId: string; employeeName: string; employeeNo: string;
+  date: string; hours: number; rate: number | null; reason: string;
+  status: OvertimeStatus; returnedComment: string | null; createdAt: string; decidedAt: string | null;
+  pendingWith: { level: number; totalSteps: number; label: string; approver: string } | null;
+  canCancel: boolean; canEdit: boolean;
+  compensation: OvertimeCompensation;
+  /** Once approved as time off: the hours that counted, and the leave given (0 while the hours wait in the bank). */
+  creditedHours: number | null; creditedDays: number | null; leaveType: string | null;
+  /** The kind of day it was sent for (null on requests from before rates were set by rules). */
+  dayKind: OvertimeDayKind | null;
+}
+
+/** What time off earned (done) or would earn if approved now. */
+export interface OvertimeTimeOff {
+  leaveTypeId: string; leaveType: string; countedHours: number; days: number;
+  /** Banked hours after it (estimates for banked rules). */
+  bankHours: number | null;
+  /** Hours short of a whole unit that won't be given (per-request rules). */
+  lostHours: number | null;
+  conversion: OvertimeConversion | null;
+  done: boolean;
+}
+
+export interface OvertimeDetail {
+  overtime: OvertimeRequest;
+  /** The day's clock-ins (with any approved correction), time worked, and other overtime asked for or approved that day. */
+  recorded: { sessions: WorkSession[]; workedMin: number; otherHours: number };
+  timeline: TimelineStep[];
+  timeOff: OvertimeTimeOff | null;
+}
+
+// ---------- overtime rules ----------
+
+/** PAY: paid. TIME_OFF: given back as leave. CHOICE: the employee picks on each request. */
+export type OvertimeRuleCompensation = 'PAY' | 'TIME_OFF' | 'CHOICE';
+/** BANKED: hours add up across requests. PER_REQUEST: each request converts on its own. */
+export type OvertimeConversion = 'BANKED' | 'PER_REQUEST';
+export type OvertimeExpiry = 'NONE' | 'DAYS' | 'YEAR_END';
+
+export interface OvertimeRule {
+  /** null for the built-in default (paid) when no rule is set. */
+  id: string | null;
+  scope: 'COMPANY' | 'ENTITY' | 'DEPARTMENT' | 'DEFAULT';
+  entityId: string | null; entityName: string | null;
+  departmentId: string | null; departmentName: string | null;
+  compensation: OvertimeRuleCompensation;
+  conversion: OvertimeConversion;
+  creditUnit: 'HALF_DAY' | 'FULL_DAY';
+  hoursPerUnit: number;
+  applyRate: boolean;
+  leaveTypeId: string | null; leaveTypeName: string | null;
+  expiry: OvertimeExpiry;
+  expiryDays: number | null;
+  updatedAt: string | null;
+  /** Rates for a working day, rest day and public holiday (1 to 5, quarter steps). */
+  rateWorking: number; rateRest: number; rateHoliday: number;
+  /** AUTO: the rate comes from the kind of day. EMPLOYEE: the employee picks one of the rule's rates. */
+  rateMode: 'AUTO' | 'EMPLOYEE';
+}
+
+export interface OvertimeRuleInput {
+  entityId: string | null; departmentId: string | null;
+  compensation: OvertimeRuleCompensation; conversion: OvertimeConversion; creditUnit: 'HALF_DAY' | 'FULL_DAY';
+  hoursPerUnit: number; applyRate: boolean; leaveTypeId: string | null; expiry: OvertimeExpiry; expiryDays: number | null;
+  rateWorking: number; rateRest: number; rateHoliday: number; rateMode: 'AUTO' | 'EMPLOYEE';
+}
+
+export interface OvertimeRuleSettings {
+  rules: OvertimeRule[];
+  entities: { id: string; name: string }[];
+  departments: { id: string; name: string }[];
+  /** Leave types that keep a balance, so time off can be added to them. */
+  leaveTypes: { id: string; name: string }[];
+}
+
+/** Approving several at once: the ones approved, and why the others weren't. */
+export interface ApproveManyResult {
+  approved: string[];
+  failed: { instanceId: string; code: string; message: string }[];
+}
+
 export interface TimesheetTotals {
   /** Working days without full-day leave. */
   expectedDays: number;
@@ -655,6 +769,8 @@ export interface TimesheetTotals {
   /** Approved leave on working days; half days count 0.5. */
   leaveDays: number;
   flagged: number;
+  /** Approved overtime. */
+  overtimeMin: number;
 }
 
 export interface Timesheet {
@@ -827,6 +943,9 @@ export function createApiClient(opts: ApiClientOptions) {
         request<ApprovalFlow>('POST', `/workflow/flows${query({ subject })}`, { body: input }),
       updateFlow: (id: string, input: ApprovalFlowInput) => request<ApprovalFlow>('PUT', `/workflow/flows/${id}`, { body: input }),
       deleteFlow: (id: string) => request<void>('DELETE', `/workflow/flows/${id}`),
+      /** Use one workflow for a leave or claim type. dryRun (the default): only say what would change. */
+      assignFlow: (subject: 'LEAVE' | 'CLAIM', typeId: string, flowId: string, dryRun = true) =>
+        request<FlowAssignment>('POST', `/workflow/flows/assign${query({ subject })}`, { body: { typeId, flowId, dryRun } }),
       reorderFlows: (subject: FlowSubject, order: string[]) =>
         request<ApprovalFlow[]>('PUT', `/workflow/flows/order${query({ subject })}`, { body: { order } }),
       preview: (employeeId: string, leaveTypeId: string, days: number) =>
@@ -857,6 +976,9 @@ export function createApiClient(opts: ApiClientOptions) {
         request<void>('POST', `/approvals/${instanceId}/approve`, { body: { comment } }),
       reject: (instanceId: string, comment: string) =>
         request<void>('POST', `/approvals/${instanceId}/reject`, { body: { comment } }),
+      /** Up to 100 at once; each is decided on its own. */
+      approveMany: (instanceIds: string[], comment?: string) =>
+        request<ApproveManyResult>('POST', '/approvals/approve', { body: { instanceIds, comment } }),
     },
     leave: {
       types: () => request<LeaveType[]>('GET', '/leave/types'),
@@ -970,6 +1092,23 @@ export function createApiClient(opts: ApiClientOptions) {
         resubmit: (id: string, input: CorrectionInput) => request<AttendanceCorrection>('PUT', `/attendance/corrections/${id}`, { body: input }),
         cancel: (id: string) => request<void>('POST', `/attendance/corrections/${id}/cancel`),
         detail: (id: string) => request<CorrectionDetail>('GET', `/attendance/corrections/${id}`),
+      },
+      overtime: {
+        /** Your own requests, newest day first. */
+        mine: () => request<OvertimeRequest[]>('GET', '/attendance/overtime'),
+        submit: (input: OvertimeInput) => request<OvertimeRequest>('POST', '/attendance/overtime', { body: input }),
+        /** Edit one sent back for changes; it goes for approval again. */
+        resubmit: (id: string, input: OvertimeInput) => request<OvertimeRequest>('PUT', `/attendance/overtime/${id}`, { body: input }),
+        cancel: (id: string) => request<void>('POST', `/attendance/overtime/${id}/cancel`),
+        detail: (id: string) => request<OvertimeDetail>('GET', `/attendance/overtime/${id}`),
+        /** The overtime rule that applies to you, and your banked hours. */
+        myRule: () => request<{ rule: OvertimeRule; bankHours: number }>('GET', '/attendance/overtime/rule'),
+        rules: {
+          list: () => request<OvertimeRuleSettings>('GET', '/attendance/overtime-rules'),
+          create: (input: OvertimeRuleInput) => request<OvertimeRule>('POST', '/attendance/overtime-rules', { body: input }),
+          update: (id: string, input: OvertimeRuleInput) => request<OvertimeRule>('PUT', `/attendance/overtime-rules/${id}`, { body: input }),
+          remove: (id: string) => request<void>('DELETE', `/attendance/overtime-rules/${id}`),
+        },
       },
     },
     admin: {

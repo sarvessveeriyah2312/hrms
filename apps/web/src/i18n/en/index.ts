@@ -11,6 +11,7 @@ import { claims } from './claims';
 import { sites } from './sites';
 import { today } from './today';
 import { timesheet } from './timesheet';
+import { overtime } from './overtime';
 
 /** English: the source language. Malay and Chinese must have every key (checked by the typecheck). */
-export const en = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites, ...today, ...timesheet };
+export const en = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites, ...today, ...timesheet, ...overtime };

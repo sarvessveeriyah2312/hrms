@@ -392,6 +392,13 @@
 .inbox-row__who { color: var(--color-primary-hover); }
 .inbox-row__reject { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 0 20px 14px 58px; }
 .inbox-row__reject .field { flex: 1 1 260px; }
+.inbox-row__pick { width: 18px; height: 18px; flex: none; margin: 0 -4px 0 0; accent-color: var(--color-primary); }
+/* Approving several overtime requests at once */
+.inbox-many { display: flex; flex-direction: column; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--color-border); background: var(--color-primary-soft, var(--color-surface)); }
+.inbox-many__count { margin: 0; font-weight: 600; }
+.inbox-many__row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.inbox-many__row .field { flex: 1 1 240px; }
+.inbox-many ul { margin: 4px 0 0; padding-left: 18px; }
 .panel-subhead { margin: 0; font-size: 15px; font-weight: 600; }
 
 .segmented { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--app-canvas); border: 1px solid var(--color-border); }
@@ -925,3 +932,16 @@
 .mail-result.is-bad > svg { color: var(--color-danger-text); flex: none; margin-top: 2px; }
 .mail-result details { margin-top: 4px; }
 .mail-result code { display: block; margin-top: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-word; color: var(--color-text-secondary); }
+
+/* Leave and claim type settings: the approval workflows that come before the type's own chain */
+.type-flows { display: flex; flex-direction: column; gap: 6px; margin: 0 0 4px; }
+.type-flows p { margin: 0; }
+.type-flows ul { margin: 0; padding-left: 18px; }
+.type-flows__fallback { display: flex; flex-direction: column; gap: 10px; }
+.type-flows__fallback.is-unused { opacity: 0.6; }
+.type-flows__fallback.is-unused:focus-within { opacity: 1; }
+.type-flows__choose { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; border-top: 1px solid var(--color-border); }
+.type-flows__preview { display: flex; flex-direction: column; gap: 6px; }
+.type-flows__preview p { margin: 0; }
+.type-flows__preview ul { margin: 0; padding-left: 18px; }
+.type-flows__warnings { color: var(--color-warning-text); }

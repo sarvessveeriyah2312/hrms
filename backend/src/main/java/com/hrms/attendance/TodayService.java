@@ -79,7 +79,7 @@ class TodayService {
         List<Person> out = new ArrayList<>(people.size());
         for (Emp e : people) {
             var d = TimesheetService.day(e, day, LocalDateTime.now(clock.withZone(e.zone())), punches.get(e.id()),
-                leave.get(e.id()), holiday, sites, home.get(e.id()), corrections.get(e.id()));
+                leave.get(e.id()), holiday, sites, home.get(e.id()), corrections.get(e.id()), null);
             out.add(new Person(e.id(), e.employeeNo(), e.fullName(), e.department(), d.siteId(), d.site(), d.status(),
                 d.expectedIn(), d.firstIn(), d.stillIn() ? null : d.lastOut(), d.stillIn(),
                 d.overdue() ? d.overdueMin() : d.lateMin(), d.overdue(), d.flagged(), d.leaveType(), d.leavePart(), d.offReason()));

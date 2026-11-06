@@ -15,6 +15,8 @@ import { Panel } from '../../components/app/Panel';
 import { EntitlementsTab } from './EntitlementsTab';
 import { HolidayYearList } from './HolidayYearList';
 import { HolidayCalendar } from './HolidayCalendar';
+import { TypeWorkflows } from '../workflows/TypeWorkflows';
+import { approvalText, useSubjectFlows } from '../workflows/typeFlows';
 
 const TONES: Tone[] = ['teal', 'blue', 'green', 'orange', 'purple', 'pink'];
 
@@ -32,6 +34,7 @@ type Tab = (typeof TABS)[number];
 export function LeaveSettingsPage() {
   const { t } = useTranslation();
   const types = useQuery({ queryKey: ['leave', 'settings', 'types'], queryFn: api.leave.settings.types });
+  const flows = useSubjectFlows('LEAVE');
   const holidays = useQuery({ queryKey: ['leave', 'settings', 'holidays'], queryFn: api.leave.settings.holidays });
   const [editingState, setEditingState] = useState<LeaveType | 'new' | null>(null);
   // Opened from search: ?type=<leave type id>
@@ -84,7 +87,7 @@ export function LeaveSettingsPage() {
                         : t('ls.carryUpTo', { n: Number(lt.carryMax) })
                       : null,
                     lt.requiresAttachment ? t('ls.docRequired') : null,
-                    t('ls.approval', { chain: chainText(lt) }),
+                    approvalText(t, flows.data, lt.id, chainText(lt)),
                     lt.halfDayAllowed ? t('ls.halfDays') : t('ls.fullDays'),
                     lt.paid ? t('ls.paid') : t('ls.unpaid'),
                   ].filter(Boolean).join(' · ')}
@@ -238,16 +241,18 @@ function TypeEditor({ type, onClose }: { type: LeaveType | null; onClose: () => 
 
         <fieldset>
           <legend>{t('ls.approvalTitle')}</legend>
-          <label className="field">
-            {t('ls.managerLevels')}
-            <select value={input.approvalLevels} onChange={(e) => set('approvalLevels', Number(e.target.value))}>
-              <option value={0}>{t('ls.levels0')}</option>
-              <option value={1}>{t('ls.levels1')}</option>
-              <option value={2}>{t('ls.levels2')}</option>
-            </select>
-          </label>
-          <label className="check-line"><input type="checkbox" checked={!!input.hrApproval} onChange={(e) => set('hrApproval', e.target.checked)} />{t('ls.hrLast')}</label>
-          <p className="hint">{t('ls.chainHint', { chain: chainText({ approvalLevels: input.approvalLevels ?? 1, hrApproval: !!input.hrApproval }) })}</p>
+          <TypeWorkflows subject="LEAVE" typeId={type?.id ?? null}>
+            <label className="field">
+              {t('ls.managerLevels')}
+              <select value={input.approvalLevels} onChange={(e) => set('approvalLevels', Number(e.target.value))}>
+                <option value={0}>{t('ls.levels0')}</option>
+                <option value={1}>{t('ls.levels1')}</option>
+                <option value={2}>{t('ls.levels2')}</option>
+              </select>
+            </label>
+            <label className="check-line"><input type="checkbox" checked={!!input.hrApproval} onChange={(e) => set('hrApproval', e.target.checked)} />{t('ls.hrLast')}</label>
+            <p className="hint">{t('ls.chainHint', { chain: chainText({ approvalLevels: input.approvalLevels ?? 1, hrApproval: !!input.hrApproval }) })}</p>
+          </TypeWorkflows>
         </fieldset>
 
         {type && (
