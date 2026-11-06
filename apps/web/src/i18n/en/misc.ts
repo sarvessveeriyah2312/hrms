@@ -26,6 +26,18 @@ export const misc = {
     filters: 'Report filters', searchPlaceholder: 'Search name, number, department or leave type',
     balance: 'Balance', balanceAny: 'Any balance',
     balanceOpt: { over: 'Over their balance', low: 'Fewer than {{n}} days left', unused: 'Nothing taken yet', waiting: 'Has days waiting' },
+    att: {
+      subtitle: 'Hours, lateness, absence and overtime by person and month, for the people you can report on.',
+      searchPlaceholder: 'Search name, number, department or site',
+      site: 'Site', allSites: 'All sites', people: 'People',
+      showOpt: { late: 'Late at least once', early: 'Left early at least once', missed: 'Missed a clock-out', absent: 'Absent at least once', overtime: 'Has overtime' },
+      byPerson: 'Attendance by person', byMonth: 'By month',
+      overtimePaid: 'Paid overtime', payHours: '{{time}} to pay (hours × rate)', timeOffNote: '{{time}} as time off',
+      otPaid: 'Paid OT', otPayHours: 'OT pay hours', otTimeOff: 'OT as time off',
+      lockedMonths_one: '{{count}} month locked', lockedMonths_other: '{{count}} months locked',
+      csvHint: 'One line per person and month, with paid overtime hours per rate, for payroll.',
+      truncated: 'Some people aren’t shown: there are more than one report can hold. Ask HR for a narrower reports scope.',
+    },
     claims: {
       subtitle: 'Approved and waiting claims by expense date, for the people you can report on.',
       searchPlaceholder: 'Search name, number, department or claim type',

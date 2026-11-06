@@ -27,6 +27,7 @@ export const timesheet: Shape<typeof en> = {
     everyone: 'Semua orang', filters: 'Penapis lembaran masa',
     daysWorked: 'Hari bekerja', hours: 'Jam',
     ofDays: '{{n}} / {{of}}', ofDaysLong: 'Pada {{n}} daripada {{of}} hari bekerja',
+    missedOutN_one: '{{count}} daftar keluar tertinggal', missedOutN_other: '{{count}} daftar keluar tertinggal',
     countTime: '{{n}} · {{time}}',
     absentLeave: '{{absent}} tidak hadir · {{leave}} cuti',
     days: 'Hari', noDays: 'Belum ada hari dalam bulan ini.',
@@ -50,5 +51,15 @@ export const timesheet: Shape<typeof en> = {
     waitingFor: 'Menunggu {{name}}',
     corrected: 'Dibetulkan',
     statusName: { PENDING: 'Menunggu', APPROVED: 'Diluluskan', REJECTED: 'Ditolak', RETURNED: 'Dihantar balik', CANCELLED: 'Ditarik balik' },
+  },
+  lock: {
+    locked: 'Dikunci', lock: 'Kunci bulan', unlock: 'Buka kunci', title: 'Kunci {{month}}',
+    isLocked: 'Dikunci untuk gaji oleh {{who}}, {{when}}.', isOpen: 'Bulan ini terbuka.',
+    explain: 'Semasa bulan dikunci, tiada sesiapa boleh mendaftar masuk pada hari-harinya atau menghantar atau meluluskan pembetulan dan lebih masa untuknya. Menolak, mengembalikan dan menarik balik masih boleh.',
+    waiting: 'Masih menunggu kelulusan: {{corrections}} pembetulan dan {{overtime}} permohonan lebih masa. Ia tidak boleh diluluskan semasa bulan dikunci.',
+    lockMonth: 'Kunci bulan ini', unlockMonth: 'Buka kunci bulan ini',
+    reason: 'Kenapa buka kunci?', reasonHint: 'cth. Bahagian gaji mendapati daftar keluar Arjun tertinggal',
+    history: 'Sejarah', lockedEvent: 'Dikunci', unlockedEvent: 'Dibuka',
+    mineLocked: 'Bulan ini dikunci untuk gaji, jadi hari-harinya tidak boleh dibetulkan. Tanya HR jika ada yang salah.',
   },
 };

@@ -49,3 +49,7 @@
 .ot-rates { display: flex; flex-direction: column; gap: 10px; }
 .ot-rate-input { display: flex; align-items: center; gap: 6px; }
 .ot-rate-input input { width: 80px; }
+
+/* Locked months */
+.att-toolbar__end { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lock-history { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }

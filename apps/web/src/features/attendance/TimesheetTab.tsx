@@ -12,6 +12,7 @@ import { Card, StatCard, Status } from '../../components/app/kit';
 import { FilterBar } from '../../components/app/FilterBar';
 import { Table } from '../../components/app/Table';
 import { Icon } from '../../components/Icon';
+import { MonthLock } from './PeriodLock';
 import { CorrectionForm, CorrectionStatusChip, MyCorrections, type CorrectionTarget } from './Corrections';
 import './attendance.css';
 
@@ -106,7 +107,10 @@ export function TeamTimesheets() {
     <>
       <div className="att-toolbar">
         <h2 className="att-toolbar__title">{formatDate(`${month}-01`, { month: 'long', year: 'numeric' })}</h2>
-        <MonthPicker month={month} thisMonth={thisMonth} onChange={setMonth} />
+        <div className="att-toolbar__end">
+          <MonthLock month={month} />
+          <MonthPicker month={month} thisMonth={thisMonth} onChange={setMonth} />
+        </div>
       </div>
       {team.isError && <p className="form-error" role="alert">{errorText(team.error)}</p>}
       {team.data?.truncated && <p className="notice" role="status">{t('timesheet.truncated', { n: team.data.people.length })}</p>}
@@ -197,6 +201,8 @@ function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack, onFix, onO
   });
   const s = sheet.data;
   const x = s?.totals;
+  const lock = useQuery({ queryKey: ['attendance', 'lock', month], queryFn: () => api.attendance.locks.status(month) });
+  const locked = !!lock.data?.locked;
 
   return (
     <>
@@ -211,8 +217,12 @@ function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack, onFix, onO
             {onBack && s ? `${s.fullName} · ` : ''}{formatDate(`${month}-01`, { month: 'long', year: 'numeric' })}
           </h2>
         </div>
-        <MonthPicker month={month} thisMonth={thisMonth} onChange={onMonth} />
+        <div className="att-toolbar__end">
+          <MonthLock month={month} />
+          <MonthPicker month={month} thisMonth={thisMonth} onChange={onMonth} />
+        </div>
       </div>
+      {locked && onFix && <p className="notice" role="status">{t('lock.mineLocked')}</p>}
       {sheet.isError && <p className="form-error" role="alert">{errorText(sheet.error)}</p>}
 
       <div className="grid grid--stats">
@@ -248,7 +258,7 @@ function PersonSheet({ employeeId, month, thisMonth, onMonth, onBack, onFix, onO
               cellClass: (d) => (d.earlyMin ? 'is-warning' : undefined) },
             { key: 'note', header: t('today.note'), cell: (d) => <DayNote day={d} /> },
             ...(onFix ? [{ key: 'fix', header: t('correction.column'), cell: (d: TimesheetDay) => (
-              <FixCell day={d} onFix={() => onFix(d)} onOpen={() => d.correction && onOpenCorrection?.(d.correction.id)} />
+              <FixCell day={d} locked={locked} onFix={() => onFix(d)} onOpen={() => d.correction && onOpenCorrection?.(d.correction.id)} />
             ) }] : []),
           ]}
         />
@@ -288,7 +298,7 @@ function Sessions({ day: d }: { day: TimesheetDay }) {
 const CORRECTABLE_DAYS = 60;
 
 /** Waiting or sent back: the request (open it). Otherwise "Fix" (also to correct a day again), within the last 60 days. */
-function FixCell({ day: d, onFix, onOpen }: { day: TimesheetDay; onFix: () => void; onOpen: () => void }) {
+function FixCell({ day: d, locked, onFix, onOpen }: { day: TimesheetDay; locked: boolean; onFix: () => void; onOpen: () => void }) {
   const { t } = useTranslation();
   const [oldest] = useState(() => addDays(isoDate(new Date()), -CORRECTABLE_DAYS));
   const open = d.correction && (d.correction.status === 'PENDING' || d.correction.status === 'RETURNED');
@@ -299,7 +309,7 @@ function FixCell({ day: d, onFix, onOpen }: { day: TimesheetDay; onFix: () => vo
       </button>
     );
   }
-  if (d.date < oldest) return <span className="muted">—</span>;
+  if (d.date < oldest || locked) return <span className="muted">—</span>;
   return (
     <span className="ts-fix">
       <button type="button" className="btn" onClick={onFix}

@@ -25,6 +25,7 @@ export const timesheet = {
     everyone: 'Everyone', filters: 'Timesheet filters',
     daysWorked: 'Days worked', hours: 'Hours',
     ofDays: '{{n}} / {{of}}', ofDaysLong: 'On {{n}} of {{of}} working days',
+    missedOutN_one: '{{count}} missed clock-out', missedOutN_other: '{{count}} missed clock-outs',
     countTime: '{{n}} · {{time}}',
     absentLeave: '{{absent}} absent · {{leave}} leave',
     days: 'Days', noDays: 'No days in this month yet.',
@@ -48,5 +49,15 @@ export const timesheet = {
     waitingFor: 'Waiting for {{name}}',
     corrected: 'Corrected',
     statusName: { PENDING: 'Waiting', APPROVED: 'Approved', REJECTED: 'Rejected', RETURNED: 'Sent back', CANCELLED: 'Withdrawn' },
+  },
+  lock: {
+    locked: 'Locked', lock: 'Lock month', unlock: 'Unlock', title: 'Lock {{month}}',
+    isLocked: 'Locked for payroll by {{who}}, {{when}}.', isOpen: 'This month is open.',
+    explain: 'While a month is locked, nobody can clock in on its days or send or approve corrections and overtime for it. Rejecting, sending back and withdrawing still work.',
+    waiting: 'Still waiting for approval: {{corrections}} corrections and {{overtime}} overtime requests. They can’t be approved while the month is locked.',
+    lockMonth: 'Lock this month', unlockMonth: 'Unlock this month',
+    reason: 'Why unlock it?', reasonHint: 'e.g. Payroll found a missing clock-out for Arjun',
+    history: 'History', lockedEvent: 'Locked', unlockedEvent: 'Unlocked',
+    mineLocked: 'This month is locked for payroll, so its days can’t be corrected. Ask HR if something is wrong.',
   },
 };

@@ -11,6 +11,8 @@ Work deferred on purpose. Pick items from here when planning the next round. New
 
 ## Approval workflows (follow-ups)
 
+- [ ] **Lock per company entity:** locks are company-wide; entities paid on different dates may want their own.
+- [ ] **Attendance report for big companies:** it works a year out month by month (up to 500 people per month, like timesheets); store monthly totals if that gets slow.
 - [ ] **Undo time off for overtime:** HR can't yet reverse an approved overtime request (and the leave or banked hours it gave); today they'd adjust the person's entitlement by hand.
 - [ ] **Earned leave across years:** time off earned for overtime counts in the leave year it's earned in, so a "90 days" expiry is cut short at year end unless the leave type carries days forward. Count it in each year it's usable instead.
 - [ ] **Bank balance for HR:** a screen showing each person's banked overtime hours, with manual adjustments.

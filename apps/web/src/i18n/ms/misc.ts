@@ -28,6 +28,18 @@ export const misc: Shape<typeof en> = {
     filters: 'Penapis laporan', searchPlaceholder: 'Cari nama, nombor, jabatan atau jenis cuti',
     balance: 'Baki', balanceAny: 'Sebarang baki',
     balanceOpt: { over: 'Melebihi baki', low: 'Kurang daripada {{n}} hari berbaki', unused: 'Belum mengambil cuti', waiting: 'Ada hari menunggu' },
+    att: {
+      subtitle: 'Jam, kelewatan, ketidakhadiran dan lebih masa mengikut orang dan bulan, bagi orang yang boleh anda laporkan.',
+      searchPlaceholder: 'Cari nama, nombor, jabatan atau tapak',
+      site: 'Tapak', allSites: 'Semua tapak', people: 'Orang',
+      showOpt: { late: 'Lewat sekurang-kurangnya sekali', early: 'Pulang awal sekurang-kurangnya sekali', missed: 'Tertinggal daftar keluar', absent: 'Tidak hadir sekurang-kurangnya sekali', overtime: 'Ada lebih masa' },
+      byPerson: 'Kehadiran mengikut orang', byMonth: 'Mengikut bulan',
+      overtimePaid: 'Lebih masa dibayar', payHours: '{{time}} untuk dibayar (jam × kadar)', timeOffNote: '{{time}} sebagai cuti',
+      otPaid: 'LM dibayar', otPayHours: 'Jam bayaran LM', otTimeOff: 'LM sebagai cuti',
+      lockedMonths_one: '{{count}} bulan dikunci', lockedMonths_other: '{{count}} bulan dikunci',
+      csvHint: 'Satu baris bagi setiap orang dan bulan, dengan jam lebih masa dibayar mengikut kadar, untuk gaji.',
+      truncated: 'Sesetengah orang tidak ditunjukkan: terlalu ramai untuk satu laporan. Minta HR skop laporan yang lebih sempit.',
+    },
     claims: {
       subtitle: 'Tuntutan diluluskan dan menunggu mengikut tarikh perbelanjaan, bagi kakitangan yang anda boleh laporkan.',
       searchPlaceholder: 'Cari nama, nombor, jabatan atau jenis tuntutan',

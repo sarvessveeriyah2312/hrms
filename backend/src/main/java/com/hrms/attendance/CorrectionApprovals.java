@@ -20,10 +20,12 @@ class CorrectionApprovals implements ApprovalSubject {
 
     private final JdbcClient jdbc;
     private final CorrectionService corrections;
+    private final PeriodLocks locks;
 
-    CorrectionApprovals(JdbcClient jdbc, @Lazy CorrectionService corrections) {
+    CorrectionApprovals(JdbcClient jdbc, @Lazy CorrectionService corrections, PeriodLocks locks) {
         this.jdbc = jdbc;
         this.corrections = corrections;
+        this.locks = locks;
     }
 
     @Override
@@ -60,6 +62,8 @@ class CorrectionApprovals implements ApprovalSubject {
 
     @Override
     public void onFinished(UUID subjectId, Outcome outcome, String comment) {
+        // Approving changes the day's times, so a locked month refuses it (and the approval rolls back).
+        if (outcome == Outcome.APPROVED) corrections.find(subjectId).ifPresent(c -> locks.requireOpen(c.date(), "attendance"));
         jdbc.sql("""
                 update attendance_correction set status = :status, decided_at = now(), version = version + 1,
                        returned_comment = case when :status = 'RETURNED' then :comment else returned_comment end

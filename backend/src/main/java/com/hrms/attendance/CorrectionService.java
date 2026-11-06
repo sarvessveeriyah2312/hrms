@@ -64,18 +64,21 @@ public class CorrectionService {
     private final AttendanceFacts facts;
     private final WorkflowService workflow;
     private final ApprovalFlows flows;
+    private final PeriodLocks locks;
     private final Clock clock;
 
     @Autowired
-    CorrectionService(JdbcClient jdbc, AttendanceFacts facts, WorkflowService workflow, ApprovalFlows flows) {
-        this(jdbc, facts, workflow, flows, Clock.systemUTC());
+    CorrectionService(JdbcClient jdbc, AttendanceFacts facts, WorkflowService workflow, ApprovalFlows flows, PeriodLocks locks) {
+        this(jdbc, facts, workflow, flows, locks, Clock.systemUTC());
     }
 
-    CorrectionService(JdbcClient jdbc, AttendanceFacts facts, WorkflowService workflow, ApprovalFlows flows, Clock clock) {
+    CorrectionService(JdbcClient jdbc, AttendanceFacts facts, WorkflowService workflow, ApprovalFlows flows, PeriodLocks locks,
+                      Clock clock) {
         this.jdbc = jdbc;
         this.facts = facts;
         this.workflow = workflow;
         this.flows = flows;
+        this.locks = locks;
         this.clock = clock;
     }
 
@@ -111,6 +114,7 @@ public class CorrectionService {
     Correction submit(UUID employeeId, Input in) {
         Emp e = facts.person(employeeId).orElseThrow(CorrectionService::notFound);
         check(in, e.joinDate(), LocalDateTime.now(clock.withZone(e.zone())));
+        locks.requireOpen(in.date(), "attendance");
         UUID id = UUID.randomUUID();
         try {
             jdbc.sql("""
@@ -138,6 +142,7 @@ public class CorrectionService {
         }
         Emp e = facts.person(employeeId).orElseThrow(CorrectionService::notFound);
         check(in, e.joinDate(), LocalDateTime.now(clock.withZone(e.zone())));
+        locks.requireOpen(in.date(), "attendance");
         try {
             jdbc.sql("""
                     update attendance_correction set work_date = :date, clock_in = :in, clock_out = :out, reason = :reason,

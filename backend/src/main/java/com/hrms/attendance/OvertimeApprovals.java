@@ -19,11 +19,13 @@ class OvertimeApprovals implements ApprovalSubject {
     private final JdbcClient jdbc;
     private final OvertimeService overtime;
     private final OvertimeTimeOff timeOff;
+    private final PeriodLocks locks;
 
-    OvertimeApprovals(JdbcClient jdbc, @Lazy OvertimeService overtime, OvertimeTimeOff timeOff) {
+    OvertimeApprovals(JdbcClient jdbc, @Lazy OvertimeService overtime, OvertimeTimeOff timeOff, PeriodLocks locks) {
         this.jdbc = jdbc;
         this.overtime = overtime;
         this.timeOff = timeOff;
+        this.locks = locks;
     }
 
     @Override
@@ -63,6 +65,8 @@ class OvertimeApprovals implements ApprovalSubject {
 
     @Override
     public void onFinished(UUID subjectId, Outcome outcome, String comment) {
+        // Approving adds overtime to the month (and maybe leave), so a locked month refuses it (the approval rolls back).
+        if (outcome == Outcome.APPROVED) overtime.find(subjectId).ifPresent(o -> locks.requireOpen(o.date(), "overtime"));
         int changed = jdbc.sql("""
                 update overtime_request set status = :status, decided_at = now(), version = version + 1,
                        returned_comment = case when :status = 'RETURNED' then :comment else returned_comment end

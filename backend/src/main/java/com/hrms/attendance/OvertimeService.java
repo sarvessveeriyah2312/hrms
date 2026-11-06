@@ -87,22 +87,24 @@ public class OvertimeService {
     private final ApprovalFlows flows;
     private final OvertimeRules rules;
     private final OvertimeTimeOff timeOff;
+    private final PeriodLocks locks;
     private final Clock clock;
 
     @Autowired
     OvertimeService(JdbcClient jdbc, AttendanceFacts facts, WorkflowService workflow, ApprovalFlows flows, OvertimeRules rules,
-                    OvertimeTimeOff timeOff) {
-        this(jdbc, facts, workflow, flows, rules, timeOff, Clock.systemUTC());
+                    OvertimeTimeOff timeOff, PeriodLocks locks) {
+        this(jdbc, facts, workflow, flows, rules, timeOff, locks, Clock.systemUTC());
     }
 
     OvertimeService(JdbcClient jdbc, AttendanceFacts facts, WorkflowService workflow, ApprovalFlows flows, OvertimeRules rules,
-                    OvertimeTimeOff timeOff, Clock clock) {
+                    OvertimeTimeOff timeOff, PeriodLocks locks, Clock clock) {
         this.jdbc = jdbc;
         this.facts = facts;
         this.workflow = workflow;
         this.flows = flows;
         this.rules = rules;
         this.timeOff = timeOff;
+        this.locks = locks;
         this.clock = clock;
     }
 
@@ -155,6 +157,7 @@ public class OvertimeService {
         OvertimeRules.Rule rule = rules.forEmployee(employeeId);
         String compensation = compensation(rule, in);
         check(in, e.joinDate(), LocalDate.now(clock.withZone(e.zone())));
+        locks.requireOpen(in.date(), "overtime");
         OvertimeRules.DayKind kind = dayKind(e, in.date());
         BigDecimal rate = rateNeeded(rule, compensation) ? OvertimeRules.rateFor(rule, kind, in.rate()) : null;
         lockPerson(employeeId);
@@ -184,6 +187,7 @@ public class OvertimeService {
         OvertimeRules.Rule rule = rules.forEmployee(employeeId);
         String compensation = compensation(rule, in);
         check(in, e.joinDate(), LocalDate.now(clock.withZone(e.zone())));
+        locks.requireOpen(in.date(), "overtime");
         OvertimeRules.DayKind kind = dayKind(e, in.date());
         BigDecimal rate = rateNeeded(rule, compensation) ? OvertimeRules.rateFor(rule, kind, in.rate()) : null;
         lockPerson(employeeId);

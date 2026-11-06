@@ -51,7 +51,7 @@ export const router = createBrowserRouter([
           { path: 'leave/settings', element: <RequirePermission module="leave" any={['leave:manage']}><LeaveSettingsPage /></RequirePermission> },
           { path: 'claims', element: <RequirePermission module="claims" any={['claims:submit', 'claims:view']}><ClaimsPage /></RequirePermission> },
           { path: 'claims/settings', element: <RequirePermission module="claims" any={['claims:manage']}><ClaimSettingsPage /></RequirePermission> },
-          { path: 'reports', element: <RequirePermission module="reports" any={['reports:leave', 'reports:claims']}><ReportsPage /></RequirePermission> },
+          { path: 'reports', element: <RequirePermission module="reports" any={['reports:leave', 'reports:claims', 'reports:attendance']}><ReportsPage /></RequirePermission> },
           { path: 'admin/users', element: <RequirePermission any={['admin:users']}><UsersPage /></RequirePermission> },
           { path: 'admin/roles', element: <RequirePermission any={['admin:roles']}><RolesPage /></RequirePermission> },
           { path: 'admin/workflows', element: <RequirePermission any={['workflow:manage']}><WorkflowsPage /></RequirePermission> },

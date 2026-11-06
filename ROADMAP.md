@@ -24,8 +24,8 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 - [x] **Timesheets:** each person's clock-ins by day, worked hours, late arrival, early leave and missed clock-outs; for yourself and your team. · M
 - [x] **Attendance corrections** ("I forgot to clock out"): request with reason → approval workflows (new subject type) → timesheet updated. · M
 - [x] **Overtime requests** with rates (1.0×, 1.5×, 2.0×, 3.0×) and hours, through approval workflows; approvers can approve several at once. · M
-- [ ] **Attendance report** + "See attendance reports" permission (lateness, absence, hours, overtime by person and month), with filters and CSV. · M
-- [ ] **Lock a period** before payroll: HR locks a month so timesheets, corrections and overtime can't change; unlock with a reason. · S
+- [x] **Attendance report** + "See attendance reports" permission (lateness, absence, hours, overtime by person and month), with filters and CSV. · M
+- [x] **Lock a period** before payroll: HR locks a month so timesheets, corrections and overtime can't change; unlock with a reason. · S
 
 ## Phase 2 · Employee profile
 

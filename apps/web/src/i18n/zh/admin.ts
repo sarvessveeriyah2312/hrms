@@ -62,7 +62,8 @@ export const admin: Shape<typeof en> = {
       view: { name: '查看考勤', description: '查看今日出勤情况和打卡记录。' },
       timesheets: { name: '查看工时表', description: '每人每天的工作时长、迟到、早退和漏打下班卡。' },
       approve: { name: '审批考勤更正和加班', description: '处理考勤相关申请。' },
-      manage: { name: '管理考勤规则', description: '工作地点、地理围栏、Wi-Fi 和班次。' },
+      manage: { name: '管理考勤规则', description: '工作地点、地理围栏、Wi-Fi、加班规则和班次。' },
+      lock: { name: '锁定考勤期间', description: '在发薪前锁定某月，使考勤表、更正和加班无法更改；解锁时需填写原因。' },
     },
     leave: {
       apply: { name: '申请休假', description: '提交本人的休假申请。' },
@@ -83,6 +84,7 @@ export const admin: Shape<typeof en> = {
     reports: {
       leave: { name: '查看休假报表', description: '休假余额和已休天数。' },
       claims: { name: '查看报销报表', description: '已批准、待审批和已付款的报销。' },
+      attendance: { name: '查看考勤报表', description: '按人员和月份统计的工时、迟到、缺勤和加班。' },
     },
     workflow: {
       manage: { name: '管理审批流程', description: '搭建审批流程：谁审批哪些申请，以及审批顺序。' },

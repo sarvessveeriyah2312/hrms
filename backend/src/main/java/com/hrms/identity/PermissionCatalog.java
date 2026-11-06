@@ -35,7 +35,8 @@ public final class PermissionCatalog {
             new Action("view", "See attendance", "See who's in today and their clock-ins.", ANY),
             new Action("timesheets", "See timesheets", "Each person's days: hours worked, late, left early, missed clock-outs.", ANY),
             new Action("approve", "Approve corrections and overtime", "Act on attendance requests.", OTHERS),
-            new Action("manage", "Manage attendance rules", "Sites, geofences, Wi-Fi and shifts.", COMPANY))),
+            new Action("manage", "Manage attendance rules", "Sites, geofences, Wi-Fi, overtime rules and shifts.", COMPANY),
+            new Action("lock", "Lock attendance periods", "Lock a month before payroll so timesheets, corrections and overtime can't change; unlock with a reason.", COMPANY))),
         new Module("leave", "Leave", true, List.of(
             new Action("apply", "Apply for leave", "Submit their own leave requests.", SELF_ONLY),
             new Action("view", "See leave", "See leave balances and requests.", ANY),
@@ -51,7 +52,8 @@ public final class PermissionCatalog {
             new Action("manage", "Edit employee records", "Change job and personal details.", EnumSet.of(DataScope.DEPARTMENT, DataScope.ENTITY, DataScope.TENANT)))),
         new Module("reports", "Reports", true, List.of(
             new Action("leave", "See leave reports", "Leave balances and days taken.", OTHERS),
-            new Action("claims", "See claims reports", "Claims approved, waiting and paid.", OTHERS))),
+            new Action("claims", "See claims reports", "Claims approved, waiting and paid.", OTHERS),
+            new Action("attendance", "See attendance reports", "Hours, lateness, absence and overtime by person and month.", OTHERS))),
         new Module("workflow", "Approval workflows", false, List.of(
             new Action("manage", "Manage approval workflows", "Build approval workflows: who approves which requests, in what order.", COMPANY))),
         new Module("admin", "Administration", false, List.of(

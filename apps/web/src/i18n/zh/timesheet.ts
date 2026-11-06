@@ -27,6 +27,7 @@ export const timesheet: Shape<typeof en> = {
     everyone: '所有人', filters: '考勤表筛选',
     daysWorked: '出勤天数', hours: '工时',
     ofDays: '{{n}} / {{of}}', ofDaysLong: '{{of}} 个工作日中出勤 {{n}} 天',
+    missedOutN_one: '漏打下班卡 {{count}} 次', missedOutN_other: '漏打下班卡 {{count}} 次',
     countTime: '{{n}} · {{time}}',
     absentLeave: '缺勤 {{absent}} · 休假 {{leave}}',
     days: '每日记录', noDays: '本月暂无记录。',
@@ -50,5 +51,15 @@ export const timesheet: Shape<typeof en> = {
     waitingFor: '等待 {{name}}',
     corrected: '已更正',
     statusName: { PENDING: '待审批', APPROVED: '已批准', REJECTED: '已拒绝', RETURNED: '已退回', CANCELLED: '已撤回' },
+  },
+  lock: {
+    locked: '已锁定', lock: '锁定月份', unlock: '解锁', title: '锁定 {{month}}',
+    isLocked: '已由 {{who}} 为发薪锁定，{{when}}。', isOpen: '本月未锁定。',
+    explain: '月份锁定期间，任何人都不能在该月日期打卡，也不能提交或批准该月的考勤更正和加班。拒绝、退回和撤回仍可进行。',
+    waiting: '仍在等待审批：{{corrections}} 项更正和 {{overtime}} 项加班申请。月份锁定期间无法批准。',
+    lockMonth: '锁定本月', unlockMonth: '解锁本月',
+    reason: '解锁原因', reasonHint: '例如：薪资组发现 Arjun 漏打下班卡',
+    history: '记录', lockedEvent: '已锁定', unlockedEvent: '已解锁',
+    mineLocked: '本月已为发薪锁定，无法更正其日期。如有问题请联系人事。',
   },
 };

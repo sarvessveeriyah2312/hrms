@@ -31,7 +31,7 @@ const NAV: NavItem[] = [
   { to: '/app/leave', key: 'leave', icon: 'calendar', end: true, show: (u) => hasModule(u, 'leave') && canAny(u, ['leave:apply', 'leave:view']) },
   { to: '/app/claims', key: 'claims', icon: 'receipt', end: true, show: (u) => hasModule(u, 'claims') && canAny(u, ['claims:submit', 'claims:view']) },
   { to: '/app/approvals', key: 'approvals', icon: 'inbox', show: (u) => canAny(u, ['attendance:approve', 'leave:approve', 'claims:approve']) },
-  { to: '/app/reports', key: 'reports', icon: 'chart', show: (u) => hasModule(u, 'reports') && canAny(u, ['reports:leave', 'reports:claims']) },
+  { to: '/app/reports', key: 'reports', icon: 'chart', show: (u) => hasModule(u, 'reports') && canAny(u, ['reports:leave', 'reports:claims', 'reports:attendance']) },
 ];
 
 const ADMIN_NAV: NavItem[] = [

@@ -760,6 +760,38 @@ export interface ApproveManyResult {
   failed: { instanceId: string; code: string; message: string }[];
 }
 
+// ---------- attendance report and locked months ----------
+
+/** One person and month of the attendance report. */
+export interface AttendanceReportRow {
+  employeeId: string; employeeNo: string; employeeName: string; department: string | null; site: string | null;
+  /** YYYY-MM */
+  month: string;
+  totals: TimesheetTotals;
+  /** Approved paid overtime, split by rate (rate null: sent before rates were required). */
+  overtimePaidMin: number;
+  paidByRate: { rate: number | null; minutes: number }[];
+  /** Paid minutes × rate: what payroll pays for. */
+  weightedMin: number;
+  /** Approved overtime given back as leave. */
+  overtimeTimeOffMin: number;
+  locked: boolean;
+}
+
+export interface AttendanceReport {
+  year: number; month: number | null; scope: DataScope; rows: AttendanceReportRow[];
+  /** More people than one report shows; ask for a narrower scope. */
+  truncated: boolean;
+}
+
+/** A month's lock for payroll. waiting*: requests for it still waiting (they can't be approved while it's locked). */
+export interface PeriodLockStatus {
+  month: string; locked: boolean; lockedBy: string | null; lockedAt: string | null;
+  waitingCorrections: number; waitingOvertime: number;
+  /** Only for people who can lock. */
+  history: { action: 'LOCK' | 'UNLOCK'; reason: string | null; actor: string | null; at: string }[];
+}
+
 export interface TimesheetTotals {
   /** Working days without full-day leave. */
   expectedDays: number;
@@ -1081,6 +1113,16 @@ export function createApiClient(opts: ApiClientOptions) {
       today: (date?: string) => request<Today>('GET', `/attendance/today${date ? `?date=${date}` : ''}`),
       /** Totals per person in your attendance:timesheets scope. from/to: YYYY-MM-DD, up to 62 days; default this month. */
       timesheets: (range: { from?: string; to?: string } = {}) => request<TeamTimesheets>('GET', `/attendance/timesheets${query(range)}`),
+      report: (q: { year?: number; month?: number } = {}) => request<AttendanceReport>('GET', `/attendance/reports${query(q)}`),
+      reportCsv: (q: { year?: number; month?: number } = {}) => request<Blob>('GET', `/attendance/reports/csv${query(q)}`, { blob: true }),
+      locks: {
+        /** month: YYYY-MM */
+        status: (month: string) => request<PeriodLockStatus>('GET', `/attendance/locks${query({ month })}`),
+        /** The locked months of a year (YYYY-MM). */
+        year: (year: number) => request<string[]>('GET', `/attendance/locks/year${query({ year })}`),
+        lock: (month: string) => request<PeriodLockStatus>('POST', '/attendance/locks', { body: { month } }),
+        unlock: (month: string, reason: string) => request<PeriodLockStatus>('POST', '/attendance/locks/unlock', { body: { month, reason } }),
+      },
       /** One person's days ('me' for your own). */
       timesheet: (employeeId: string | 'me', range: { from?: string; to?: string } = {}) =>
         request<Timesheet>('GET', `/attendance/timesheets/${employeeId}${query(range)}`),

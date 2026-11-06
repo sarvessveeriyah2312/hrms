@@ -43,14 +43,17 @@ class PunchService {
     private final ApplicationEventPublisher events;
     private final JdbcClient jdbc;
     private final FileStore files;
+    private final PeriodLocks locks;
     private final Clock clock;
 
-    PunchService(PunchRepository punches, ClockRuleEngine rules, ApplicationEventPublisher events, JdbcClient jdbc, FileStore files) {
+    PunchService(PunchRepository punches, ClockRuleEngine rules, ApplicationEventPublisher events, JdbcClient jdbc, FileStore files,
+                 PeriodLocks locks) {
         this.punches = punches;
         this.rules = rules;
         this.events = events;
         this.jdbc = jdbc;
         this.files = files;
+        this.locks = locks;
         this.clock = Clock.systemUTC();
     }
 
@@ -58,6 +61,7 @@ class PunchService {
     ClockResponse clock(UUID employeeId, UUID userId, ClockRequest req, String idempotencyKey) {
         // TODO(idempotency): look up idempotencyKey in Redis and return the stored response on retries.
         UUID tenantId = TenantContext.require();
+        locks.requireOpenToday(employeeId);
         Instant now = Instant.now(clock);
         boolean selfie = req.selfieFileId() != null && checkSelfie(req.selfieFileId(), userId);
         String bssid = req.wifiBssid() == null ? null : SiteService.normaliseBssid(req.wifiBssid());

@@ -28,6 +28,18 @@ export const misc: Shape<typeof en> = {
     filters: '报表筛选', searchPlaceholder: '搜索姓名、工号、部门或假期类型',
     balance: '余额', balanceAny: '任意余额',
     balanceOpt: { over: '已超出余额', low: '剩余少于 {{n}} 天', unused: '尚未休假', waiting: '有待审批天数' },
+    att: {
+      subtitle: '按人员和月份统计的工时、迟到、缺勤和加班，范围为您可查看报表的人员。',
+      searchPlaceholder: '搜索姓名、工号、部门或工作地点',
+      site: '工作地点', allSites: '所有工作地点', people: '人数',
+      showOpt: { late: '至少迟到一次', early: '至少早退一次', missed: '漏打下班卡', absent: '至少缺勤一次', overtime: '有加班' },
+      byPerson: '按人员', byMonth: '按月份',
+      overtimePaid: '付费加班', payHours: '应付 {{time}}（时数 × 倍率）', timeOffNote: '{{time}} 转为补休',
+      otPaid: '付费加班', otPayHours: '加班计薪时数', otTimeOff: '加班转补休',
+      lockedMonths_one: '已锁定 {{count}} 个月', lockedMonths_other: '已锁定 {{count}} 个月',
+      csvHint: '每人每月一行，按倍率列出付费加班时数，供发薪使用。',
+      truncated: '部分人员未显示：人数超过单份报表上限。请让人事缩小您的报表范围。',
+    },
     claims: {
       subtitle: '按费用日期统计您可查看人员的已批准和待审批报销。',
       searchPlaceholder: '搜索姓名、工号、部门或报销类型',

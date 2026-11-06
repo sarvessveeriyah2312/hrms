@@ -62,7 +62,8 @@ export const admin: Shape<typeof en> = {
       view: { name: 'Lihat kehadiran', description: 'Lihat siapa yang hadir hari ini dan daftar masuk mereka.' },
       timesheets: { name: 'Lihat helaian masa', description: 'Hari setiap orang: jam bekerja, lewat, pulang awal, tidak daftar keluar.' },
       approve: { name: 'Luluskan pembetulan dan kerja lebih masa', description: 'Bertindak atas permohonan kehadiran.' },
-      manage: { name: 'Urus peraturan kehadiran', description: 'Tapak, geopagar, Wi-Fi dan syif.' },
+      manage: { name: 'Urus peraturan kehadiran', description: 'Tapak, geopagar, Wi-Fi, peraturan lebih masa dan syif.' },
+      lock: { name: 'Kunci tempoh kehadiran', description: 'Kunci sebulan sebelum gaji supaya lembaran masa, pembetulan dan lebih masa tidak boleh berubah; buka dengan sebab.' },
     },
     leave: {
       apply: { name: 'Mohon cuti', description: 'Menghantar permohonan cuti sendiri.' },
@@ -83,6 +84,7 @@ export const admin: Shape<typeof en> = {
     reports: {
       leave: { name: 'Lihat laporan cuti', description: 'Baki cuti dan hari yang diambil.' },
       claims: { name: 'Lihat laporan tuntutan', description: 'Tuntutan diluluskan, menunggu dan dibayar.' },
+      attendance: { name: 'Lihat laporan kehadiran', description: 'Jam, kelewatan, ketidakhadiran dan lebih masa mengikut orang dan bulan.' },
     },
     workflow: {
       manage: { name: 'Urus aliran kelulusan', description: 'Bina aliran kelulusan: siapa meluluskan permohonan apa, dan mengikut susunan apa.' },

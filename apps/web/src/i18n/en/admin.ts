@@ -60,7 +60,8 @@ export const admin = {
       view: { name: 'See attendance', description: 'See who’s in today and their clock-ins.' },
       timesheets: { name: 'See timesheets', description: 'Each person’s days: hours worked, late, left early, missed clock-outs.' },
       approve: { name: 'Approve corrections and overtime', description: 'Act on attendance requests.' },
-      manage: { name: 'Manage attendance rules', description: 'Sites, geofences, Wi-Fi and shifts.' },
+      manage: { name: 'Manage attendance rules', description: 'Sites, geofences, Wi-Fi, overtime rules and shifts.' },
+      lock: { name: 'Lock attendance periods', description: 'Lock a month before payroll so timesheets, corrections and overtime can’t change; unlock with a reason.' },
     },
     leave: {
       apply: { name: 'Apply for leave', description: 'Submit their own leave requests.' },
@@ -81,6 +82,7 @@ export const admin = {
     reports: {
       leave: { name: 'See leave reports', description: 'Leave balances and days taken.' },
       claims: { name: 'See claims reports', description: 'Claims approved, waiting and paid.' },
+      attendance: { name: 'See attendance reports', description: 'Hours, lateness, absence and overtime by person and month.' },
     },
     workflow: {
       manage: { name: 'Manage approval workflows', description: 'Build approval workflows: who approves which requests, in what order.' },
