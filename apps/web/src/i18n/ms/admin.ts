@@ -80,8 +80,21 @@ export const admin: Shape<typeof en> = {
       manage: { name: 'Urus polisi tuntutan', description: 'Jenis tuntutan dan had.' },
     },
     employee: {
-      view: { name: 'Lihat rekod pekerja', description: 'Lihat nama, jabatan dan pengurus.' },
-      manage: { name: 'Sunting rekod pekerja', description: 'Ubah butiran pekerjaan dan peribadi.' },
+      view: { name: 'Lihat rekod pekerja', description: 'Lihat nama, jabatan, pengurus, butiran pekerjaan, butiran hubungan dan hubungan kecemasan.' },
+      manage: { name: 'Sunting rekod pekerja', description: 'Ubah butiran pekerjaan dan peribadi, dokumen dan aset; lihat butiran peribadi (alamat, bank, keluarga).' },
+      approve: { name: 'Luluskan perubahan profil', description: 'Bertindak atas perubahan yang diminta oleh pekerja pada profil mereka.' },
+    },
+    payroll: {
+      view: { name: 'Lihat slip gaji sendiri', description: 'Buka slip gaji dan borang cukai sendiri.' },
+      manage: { name: 'Urus slip gaji dan borang cukai', description: 'Muat naik atau jana slip gaji dan borang cukai, terbitkannya dan lihat siapa yang telah membacanya.' },
+      export: { name: 'Eksport data gaji', description: 'Muat turun kehadiran, kerja lebih masa dan tuntutan yang diluluskan bagi satu tempoh gaji sebagai CSV.' },
+      dashboard: { name: 'Lihat papan pemuka gaji', description: 'Bilangan pekerja, yang menyertai dan yang berhenti, dan kos gaji mengikut bulan.' },
+    },
+    comms: {
+      post: { name: 'Siarkan pengumuman dan memo', description: 'Tulis, terbitkan dan arkibkan pengumuman dan memo HR, dan lihat siapa yang telah membacanya.' },
+      policies: { name: 'Urus polisi syarikat', description: 'Terbitkan polisi dan versi baharu, dan lihat siapa yang belum mengakuinya.' },
+      letters: { name: 'Keluarkan surat', description: 'Templat surat, kepala surat syarikat dan surat yang dikeluarkan kepada pekerja.' },
+      grievances: { name: 'Kendalikan aduan', description: 'Lihat dan balas aduan dan maklum balas, tugaskan dan ubah statusnya.' },
     },
     reports: {
       leave: { name: 'Lihat laporan cuti', description: 'Baki cuti dan hari yang diambil.' },

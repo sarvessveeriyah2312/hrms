@@ -29,11 +29,11 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 
 ## Phase 2 · Employee profile
 
-- [ ] **Profile sections:** personal, contact, address, bank, emergency contacts, spouse, children (tax relief), education, national service (SG); profile photo. · L
-- [ ] **Change requests:** employees edit their profile; changes wait for HR approval, shown side by side (current vs new); approve or reject with a comment. · M
-- [ ] **Employee documents:** upload (5 MB, PDF/JPG/PNG), describe, view by scope; reuse the file store. · S
-- [ ] **Assets** assigned to an employee (laptop, phone, card) with issue and return dates. · S
-- [ ] **Job details for HR:** join date, position, employment type, confirmation, resignation and last day. · M
+- [x] **Profile sections:** personal, contact, address, bank, emergency contacts, spouse, children (tax relief), education, national service (SG); profile photo. · L
+- [x] **Change requests:** employees edit their profile; changes wait for HR approval, shown side by side (current vs new); approve or reject with a comment. · M
+- [x] **Employee documents:** upload (5 MB, PDF/JPG/PNG), describe, view by scope; reuse the file store. · S
+- [x] **Assets** assigned to an employee (laptop, phone, card) with issue and return dates. · S
+- [x] **Job details for HR:** join date, position, employment type, confirmation, resignation and last day. · M
 
 ## Phase 3 · Scheduling
 
@@ -47,20 +47,20 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 
 ## Phase 4 · Payroll documents
 
-- [ ] **Payslips:** HR uploads or generates per pay period; employees view and download; read receipts for HR. · M
-- [ ] **Secure payslips:** device unlock to open, password-protected PDF when sharing. · S
-- [ ] **Tax forms by country:** IR8A (SG), EA (MY), IR56 (HK), TDS and investment declarations (India); by year, with read receipts. · L
-- [ ] **Payroll export:** attendance, overtime and approved claims per pay period as CSV (extends the claims export). · M
-- [ ] **Payroll dashboard:** head count, joiners vs leavers, cost by month (for payroll roles). · M
+- [x] **Payslips:** HR uploads or generates per pay period; employees view and download; read receipts for HR. · M
+- [x] **Secure payslips:** password-protected PDF when sharing. Device unlock to open moves to the mobile app lock (phase 8). · S
+- [x] **Tax forms by country:** IR8A (SG), EA (MY), IR56B (HK), Form 16 (India); by year, with read receipts. India's investment declarations are in BACKLOG. · L
+- [x] **Payroll export:** attendance, overtime and approved claims per pay period as CSV (extends the claims export). · M
+- [x] **Payroll dashboard:** head count, joiners vs leavers, cost by month (for payroll roles). · M
 
 ## Phase 5 · Communication and requests
 
-- [ ] **Announcements and HR memos** with attachments and read receipts. · M
-- [ ] **Personal letters** on company letterhead (offer, confirmation, increment). · M
-- [ ] **Company policies** with "read and acknowledged" and a list of who hasn't. · S
-- [ ] **Grievances / feedback:** submit with attachments, routed to a grievance manager, replies, close and reopen, admin view. · M
-- [ ] **Email and push notifications** for the same events as in-app, with per-person on/off per event (moves the BACKLOG item here). · M
-- [ ] **Overdue reminders** for approvers and alerts to backup approvers (scheduled job). · S
+- [x] **Announcements and HR memos** with attachments and read receipts. · M
+- [x] **Personal letters** on company letterhead (offer, confirmation, increment). · M
+- [x] **Company policies** with "read and acknowledged" and a list of who hasn't. · S
+- [x] **Grievances / feedback:** submit with attachments, routed to a grievance manager, replies, close and reopen, admin view. · M
+- [x] **Email and push notifications** for the same events as in-app, with per-person on/off per event (moves the BACKLOG item here). · M
+- [x] **Overdue reminders** for approvers and alerts to backup approvers (scheduled job). · S
 
 ## Phase 6 · Leave and claims, round 2
 
@@ -88,7 +88,7 @@ Work top to bottom: each phase builds on the ones before it. Smaller follow-ups 
 - [ ] **Inbox:** approve, reject or send back. · S
 - [ ] **Me:** profile, payslips, documents, language. · M
 - [ ] **Push notifications** opening the right screen. · S
-- [ ] **App lock** (fingerprint / face / PIN) and forced update when a version is too old. · S
+- [ ] **App lock** (fingerprint / face / PIN), also asked before opening a payslip, and forced update when a version is too old. · S
 
 ## Phase 9 · Face, kiosk and field staff
 

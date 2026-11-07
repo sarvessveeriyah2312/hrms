@@ -50,12 +50,23 @@ public final class PermissionCatalog {
             new Action("approve", "Approve claims", "Act on claims.", OTHERS),
             new Action("manage", "Manage claim policies", "Claim types and limits.", COMPANY))),
         new Module("employee", "People", false, List.of(
-            new Action("view", "See employee records", "See names, departments and managers.", ANY),
-            new Action("manage", "Edit employee records", "Change job and personal details.", EnumSet.of(DataScope.DEPARTMENT, DataScope.ENTITY, DataScope.TENANT)))),
+            new Action("view", "See employee records", "See names, departments, managers, job details, contact details and emergency contacts.", ANY),
+            new Action("manage", "Edit employee records", "Change job and personal details, documents and assets; see private details (address, bank, family).", EnumSet.of(DataScope.DEPARTMENT, DataScope.ENTITY, DataScope.TENANT)),
+            new Action("approve", "Approve profile changes", "Act on the changes people ask for to their own profile.", OTHERS))),
+        new Module("payroll", "Payroll", true, List.of(
+            new Action("view", "See their payslips", "Open their own payslips and tax forms.", SELF_ONLY),
+            new Action("manage", "Manage payslips and tax forms", "Upload or generate payslips and tax forms, publish them and see who has read them.", COMPANY),
+            new Action("export", "Export payroll data", "Download a pay period's attendance, overtime and approved claims as CSV.", COMPANY),
+            new Action("dashboard", "See the payroll dashboard", "Head count, joiners and leavers, and payroll cost by month.", COMPANY))),
         new Module("reports", "Reports", true, List.of(
             new Action("leave", "See leave reports", "Leave balances and days taken.", OTHERS),
             new Action("claims", "See claims reports", "Claims approved, waiting and paid.", OTHERS),
             new Action("attendance", "See attendance reports", "Hours, lateness, absence and overtime by person and month.", OTHERS))),
+        new Module("comms", "Communication", false, List.of(
+            new Action("post", "Post announcements and memos", "Write, publish and archive announcements and HR memos, and see who has read them.", COMPANY),
+            new Action("policies", "Manage company policies", "Publish policies and new versions, and see who hasn't acknowledged them.", COMPANY),
+            new Action("letters", "Issue letters", "Letter templates, the company letterhead, and letters issued to people.", COMPANY),
+            new Action("grievances", "Handle grievances", "See and answer grievances and feedback, assign them and change their status.", COMPANY))),
         new Module("workflow", "Approval workflows", false, List.of(
             new Action("manage", "Manage approval workflows", "Build approval workflows: who approves which requests, in what order.", COMPANY))),
         new Module("admin", "Administration", false, List.of(

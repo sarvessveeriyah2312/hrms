@@ -1,0 +1,34 @@
+/* Employee profile: header photo, section cards, list entries and the side-by-side change view. */
+
+.profile-title { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.profile-photo-wrap { display: inline-flex; align-items: center; gap: 10px; }
+.profile-photo { border-radius: 50%; object-fit: cover; display: block; border: 1px solid var(--color-border); }
+.profile-photo-actions { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 13px; font-weight: 400; }
+.profile-photo-actions .link-button { font-size: 13px; }
+.profile-photo-actions .error { font-size: 12px; color: var(--color-danger-text); max-width: 26ch; }
+
+.profile-card-actions { display: inline-flex; align-items: center; gap: 8px; }
+.profile-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.profile-items li { display: flex; flex-direction: column; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--color-border); font-size: 14px; }
+.profile-items li:last-child { border-bottom: 0; padding-bottom: 0; }
+
+.profile-entry { border: 1px solid var(--color-border) !important; border-radius: 12px; padding: 14px !important; }
+.profile-entry legend { width: 100%; justify-content: space-between; font-size: 14px !important; padding: 0 4px !important; }
+
+.profile-doc-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.profile-assets-note { padding: 0 16px 8px; }
+
+/* Current vs new */
+.compare-table tr.is-changed td:last-child { background: var(--color-warning-soft); color: var(--color-warning-text); font-weight: 500; }
+.compare-table tr.is-changed th::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--color-warning); vertical-align: middle; }
+.compare-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.compare-grid > div { border: 1px solid var(--color-border); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.compare-grid > div.is-new { border-color: var(--color-warning); background: var(--color-warning-soft); }
+.compare-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.compare-list li { display: flex; flex-direction: column; gap: 2px; }
+.compare-list small { color: var(--color-text-muted); font-size: 12px; }
+
+@media (max-width: 640px) {
+  .profile-title { gap: 10px; }
+  .profile-doc-actions { justify-content: flex-start; }
+}

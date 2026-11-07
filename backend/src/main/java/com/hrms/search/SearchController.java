@@ -102,7 +102,7 @@ class SearchController {
                 limit :n""".formatted(EmployeeScope.predicate(scope, "e")))
             .param("me", me).param("q", like).param("n", PER_KIND).query(Row.class).list().stream()
             .map(r -> Hit.of("PERSON", r.id(), r.fullName(), join(r.employeeNo(), r.department(), r.email()),
-                "/app/people?q=" + enc(r.employeeNo())))
+                "/app/people/" + r.id()))
             .toList();
     }
 

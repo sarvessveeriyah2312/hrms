@@ -3,7 +3,7 @@ import type { Tone } from '../components/Glyph';
 import i18n from '../i18n';
 
 /** One icon and colour per module, used the same way in menus, tiles, rows and the role editor. */
-type ModuleKey = 'attendance' | 'leave' | 'claims' | 'employee' | 'reports' | 'workflow' | 'admin';
+type ModuleKey = 'attendance' | 'leave' | 'claims' | 'employee' | 'reports' | 'payroll' | 'comms' | 'workflow' | 'admin';
 const meta = (key: ModuleKey, icon: IconName, tone: Tone) => ({ icon, tone, get label() { return i18n.t(`module.${key}`); } });
 
 export const MODULE_META: Record<string, { icon: IconName; tone: Tone; label: string }> = {
@@ -12,6 +12,8 @@ export const MODULE_META: Record<string, { icon: IconName; tone: Tone; label: st
   claims: meta('claims', 'receipt', 'orange'),
   employee: meta('employee', 'users', 'green'),
   reports: meta('reports', 'chart', 'purple'),
+  payroll: meta('payroll', 'wallet', 'pink'),
+  comms: meta('comms', 'megaphone', 'orange'),
   workflow: meta('workflow', 'switch', 'blue'),
   admin: meta('admin', 'sliders', 'pink'),
 };

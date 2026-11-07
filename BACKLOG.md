@@ -4,9 +4,9 @@ Work deferred on purpose. Pick items from here when planning the next round. New
 
 ## Notifications (follow-ups to in-app notifications)
 
-- [ ] **Email and push.** Same events as in-app, through email (local test mailbox such as Mailpit) and mobile push (the Firebase `PushSender` already exists). Needs per-person on/off settings per event.
+- [x] **Email and push.** Same events as in-app, through email (local test mailbox such as Mailpit) and mobile push (the Firebase `PushSender` already exists). Needs per-person on/off settings per event.
 - [ ] **Backfill.** Requests created before notifications existed never produced one. Optionally create "waiting for you" notifications for steps that are still active.
-- [ ] **Overdue reminders and backup alerts.** Needs a scheduled job: remind the approver when a step passes `due_at`, and tell the requester's backup approver when they can now act (approver away or step overdue).
+- [x] **Overdue reminders and backup alerts.** Needs a scheduled job: remind the approver when a step passes `due_at`, and tell the requester's backup approver when they can now act (approver away or step overdue).
 - [ ] **Stale approver alerts.** When a request is withdrawn or decided by someone else, mark the other approvers' "waiting for you" notifications as resolved, so they don't linger. (Today, opening one says the request is no longer waiting.)
 
 ## Approval workflows (follow-ups)
@@ -34,3 +34,26 @@ Work deferred on purpose. Pick items from here when planning the next round. New
 - [ ] **Per-entity claim limits and mileage rates** (today a claim type's limits and rate apply company-wide).
 - [ ] **Mobile:** submit a claim with the phone camera.
 
+## Employee profile (follow-ups)
+
+- [ ] **Profile changes through approval workflows:** they always go to HR (anyone with company-wide `employee:approve`); a **Profile changes** subject in Workflows would let companies add the manager or route by department.
+- [ ] **Fields per country:** every company sees every section (national service is Singapore-only, ID types cover MY, SG, HK and India). Hide sections and options that don't apply to the person's entity country.
+- [ ] **Document expiry** (passports, work permits, certificates) with reminders before they run out.
+- [ ] **Leavers:** a last working day doesn't switch the account off yet; disable sign-in (and stop clock-ins) automatically the day after.
+- [ ] **Bulk import** of profile data and job details from a spreadsheet when a company starts.
+
+## Payroll (follow-ups)
+
+- [ ] **Investment declarations (India):** employees declare tax-saving investments (80C, 80D, HRA) with proofs for HR to verify before TDS is worked out.
+- [ ] **Amounts on uploaded payslips:** only generated payslips carry gross and net pay, so the dashboard's payroll cost leaves uploaded PDFs out. Read them from a summary CSV, or let HR type them in.
+- [ ] **Salary records:** pay, allowances and statutory schemes (EPF, SOCSO, EIS, PCB; CPF; MPF) per person, so payslips can be worked out here rather than imported.
+- [ ] **Payslip fonts:** generated payslips use the standard PDF fonts, so Chinese and Tamil names show as "?". Embed a Unicode font.
+- [ ] **Scheduled publishing** (publish on pay day at 9:00) and a reminder to people who haven't opened their payslip.
+
+## Communication (follow-ups)
+
+- [ ] **Rich text in notices** (bold, lists, links); today they're plain text with paragraphs.
+- [ ] **Scheduled notices** (publish at a set time) and expiry dates for announcements.
+- [ ] **Letters signed electronically** by the employee (accept an offer, acknowledge a warning) instead of print and sign.
+- [ ] **Grievance categories routed to different handlers** (e.g. harassment to a named committee) and response-time targets.
+- [ ] **Email digest** (one daily email instead of one per notification) and quiet hours for push.

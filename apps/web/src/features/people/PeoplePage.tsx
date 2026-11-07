@@ -46,7 +46,8 @@ export function PeoplePage() {
               key={e.id}
               lead={<Avatar name={e.fullName} size={36} />}
               title={e.fullName}
-              meta={[e.employeeNo, e.email, e.department, e.manager && t('dashboard.reportsTo', { name: e.manager })].filter(Boolean).join(' · ')}
+              meta={[e.employeeNo, e.jobTitle, e.department, e.manager && t('dashboard.reportsTo', { name: e.manager })].filter(Boolean).join(' · ')}
+              to={`/app/people/${e.id}`}
               trail={<Status tone={e.status === 'ACTIVE' ? 'green' : 'grey'}>{e.status === 'ACTIVE' ? t('common.active') : t('common.inactive')}</Status>}
             />
           ))}

@@ -39,6 +39,8 @@ export const core = {
     dashboard: 'Dashboard', people: 'People', attendance: 'Attendance', leave: 'Leave', claims: 'Claims', approvals: 'Approvals',
     reports: 'Reports', settings: 'Settings', admin: 'Administration', users: 'Users', roles: 'Roles and permissions', company: 'Company',
     sites: 'Sites', rosters: 'Rosters', overtimeRules: 'Overtime rules', leaveSettings: 'Leave settings', claimSettings: 'Claim settings', workflows: 'Approval workflows',
+    profile: 'My profile', payslips: 'Payslips', payroll: 'Payroll',
+    news: 'News', feedback: 'Feedback',
   },
   site: {
     login: 'Log in', getStarted: 'Get started', navLabel: 'Site', footerLabel: 'Footer', privacy: 'Privacy',
@@ -63,6 +65,8 @@ export const core = {
   },
   module: {
     attendance: 'Attendance', leave: 'Leave', claims: 'Claims', employee: 'People', reports: 'Reports', workflow: 'Approval workflows', admin: 'Administration',
+    payroll: 'Payroll',
+    comms: 'Communication',
   },
   dates: {
     morning: 'morning', afternoon: 'afternoon', withPart: '{{date}} ({{part}})',

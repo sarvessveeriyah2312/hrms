@@ -15,6 +15,9 @@ import { today } from './today';
 import { timesheet } from './timesheet';
 import { overtime } from './overtime';
 import { roster } from './roster';
+import { profile } from './profile';
+import { payroll } from './payroll';
+import { comms } from './comms';
 
 /** Bahasa Melayu. Every English key must be here (checked by the typecheck). */
-export const ms: Shape<typeof en> = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites, ...today, ...timesheet, ...overtime, ...roster };
+export const ms: Shape<typeof en> = { ...core, ...landing, ...dashboard, ...approvals, ...leave, ...leaveSettings, ...misc, ...admin, ...workflows, ...claims, ...sites, ...today, ...timesheet, ...overtime, ...roster, ...profile, ...payroll, ...comms };

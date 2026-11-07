@@ -80,8 +80,21 @@ export const admin: Shape<typeof en> = {
       manage: { name: '管理报销政策', description: '报销类型和限额。' },
     },
     employee: {
-      view: { name: '查看员工记录', description: '查看姓名、部门和经理。' },
-      manage: { name: '编辑员工记录', description: '修改职位和个人信息。' },
+      view: { name: '查看员工记录', description: '查看姓名、部门、经理、职位信息、联系方式和紧急联系人。' },
+      manage: { name: '编辑员工记录', description: '修改职位和个人信息、文件和资产；查看私人信息（地址、银行、家庭）。' },
+      approve: { name: '审批资料变更', description: '处理员工对本人资料提出的变更。' },
+    },
+    payroll: {
+      view: { name: '查看本人工资单', description: '打开本人的工资单和税表。' },
+      manage: { name: '管理工资单和税表', description: '上传或生成工资单和税表，发布并查看谁已阅读。' },
+      export: { name: '导出薪资数据', description: '以 CSV 下载某个发薪期的考勤、加班和已批准的报销。' },
+      dashboard: { name: '查看薪资仪表板', description: '按月查看人数、入职与离职人数以及薪资成本。' },
+    },
+    comms: {
+      post: { name: '发布公告和备忘录', description: '撰写、发布和归档公告及 HR 备忘录，并查看谁已阅读。' },
+      policies: { name: '管理公司政策', description: '发布政策及新版本，并查看谁尚未确认。' },
+      letters: { name: '发出信函', description: '信函模板、公司信头以及发给员工的信函。' },
+      grievances: { name: '处理申诉', description: '查看和回复申诉与反馈，分配负责人并更改状态。' },
     },
     reports: {
       leave: { name: '查看休假报表', description: '休假余额和已休天数。' },

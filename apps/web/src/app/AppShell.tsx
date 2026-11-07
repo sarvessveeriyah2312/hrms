@@ -18,6 +18,8 @@ import { useInbox } from '../features/approvals/useInbox';
 import type { en } from '../i18n/en';
 import './app.css';
 
+const APPROVE = ['attendance:approve', 'leave:approve', 'claims:approve', 'employee:approve'];
+
 type NavItem = { to: string; key: keyof typeof en.nav; icon: IconName; end?: boolean; show: (u: Me | null) => boolean; count?: number };
 
 /**
@@ -27,12 +29,17 @@ type NavItem = { to: string; key: keyof typeof en.nav; icon: IconName; end?: boo
 const NAV: NavItem[] = [
   { to: '/app', key: 'dashboard', icon: 'home', end: true, show: () => true },
   { to: '/app/people', key: 'people', icon: 'users', show: (u) => can(u, 'employee:view') },
+  { to: '/app/payslips', key: 'payslips', icon: 'wallet', show: (u) => hasModule(u, 'payroll') && can(u, 'payroll:view') && !!u?.employeeId },
   { to: '/app/attendance', key: 'attendance', icon: 'clock', end: true, show: (u) => hasModule(u, 'attendance') && canAny(u, ['attendance:clock', 'attendance:view', 'attendance:timesheets']) },
   { to: '/app/attendance/rosters', key: 'rosters', icon: 'calendar', show: (u) => hasModule(u, 'attendance') && canAny(u, ['attendance:roster', 'attendance:manage']) },
   { to: '/app/leave', key: 'leave', icon: 'calendar', end: true, show: (u) => hasModule(u, 'leave') && canAny(u, ['leave:apply', 'leave:view']) },
   { to: '/app/claims', key: 'claims', icon: 'receipt', end: true, show: (u) => hasModule(u, 'claims') && canAny(u, ['claims:submit', 'claims:view']) },
-  { to: '/app/approvals', key: 'approvals', icon: 'inbox', show: (u) => canAny(u, ['attendance:approve', 'leave:approve', 'claims:approve']) },
+  { to: '/app/approvals', key: 'approvals', icon: 'inbox', show: (u) => canAny(u, APPROVE) },
+  { to: '/app/news', key: 'news', icon: 'megaphone', show: () => true },
+  { to: '/app/feedback', key: 'feedback', icon: 'message', show: (u) => !!u?.employeeId || can(u, 'comms:grievances') },
   { to: '/app/reports', key: 'reports', icon: 'chart', show: (u) => hasModule(u, 'reports') && canAny(u, ['reports:leave', 'reports:claims', 'reports:attendance']) },
+  { to: '/app/payroll', key: 'payroll', icon: 'wallet', show: (u) => hasModule(u, 'payroll') && canAny(u, ['payroll:manage', 'payroll:export', 'payroll:dashboard']) },
+  { to: '/app/profile', key: 'profile', icon: 'users', show: () => false },
 ];
 
 const ADMIN_NAV: NavItem[] = [
@@ -46,7 +53,7 @@ const ADMIN_NAV: NavItem[] = [
   { to: '/app/admin/workflows', key: 'workflows', icon: 'switch', show: (u) => can(u, 'workflow:manage') },
 ];
 
-const LICENSABLE = ['attendance', 'leave', 'claims', 'reports'];
+const LICENSABLE = ['attendance', 'leave', 'claims', 'reports', 'payroll'];
 
 // ⌘K on Apple devices, Ctrl+K elsewhere.
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -107,9 +114,11 @@ export function AppShell() {
   });
   const [searching, setSearching] = useState(false);
 
-  const approver = canAny(user, ['attendance:approve', 'leave:approve', 'claims:approve']);
+  const approver = canAny(user, APPROVE);
   const inbox = useInbox(approver);
-  const nav = NAV.map((i) => (i.key === 'approvals' ? { ...i, count: inbox.data?.count } : i));
+  const news = useQuery({ queryKey: ['notices', 'counts'], queryFn: () => api.notices.counts(), refetchInterval: 60_000, enabled: !!user?.employeeId });
+  const newsCount = (news.data?.unread ?? 0) + (news.data?.toAcknowledge ?? 0);
+  const nav = NAV.map((i) => (i.key === 'approvals' ? { ...i, count: inbox.data?.count } : i.key === 'news' ? { ...i, count: newsCount || undefined } : i));
   const all = [...NAV, ...ADMIN_NAV];
   const current = all
     .filter((i) => (i.end ? location.pathname === i.to : location.pathname.startsWith(i.to)))
@@ -240,8 +249,10 @@ export function AppShell() {
               label={t('shell.accountMenu')}
               trigger={<Icon name="gear" size={17} />}
               items={[
+                ...(user?.employeeId ? [{ label: t('nav.profile'), icon: 'users' as const, to: '/app/profile' }] : []),
                 { label: theme === 'dark' ? t('shell.lightMode') : t('shell.darkMode'), icon: theme === 'dark' ? 'sun' : 'moon', onSelect: toggleTheme },
                 { label: t('password.changeTitle'), icon: 'lock', to: '/app/account/password' },
+                { label: t('notifSettings.title'), icon: 'bell', to: '/app/account/notifications' },
                 { label: t('auth.switchCompany'), icon: 'switch', onSelect: switchCompany },
                 'divider',
                 { label: t('auth.signOut'), icon: 'logout', onSelect: () => void leave('/login') },

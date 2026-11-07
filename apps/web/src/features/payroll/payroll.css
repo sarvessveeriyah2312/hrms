@@ -1,0 +1,56 @@
+/* Payroll: period toolbar, upload results, pay lines and the dashboard's head count bars. */
+
+.payroll-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.payroll-toolbar .field { flex: 0 1 200px; }
+.payroll-toolbar__actions { margin-left: auto; }
+.payroll-row-actions { display: inline-flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+.payroll-done { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--color-success-soft); color: var(--color-success-text); font-size: 14px; }
+.payroll-result { display: flex; flex-direction: column; gap: 6px; }
+.payroll-result p, .payroll-result ul { margin: 0; }
+.payroll-result ul { padding-left: 18px; }
+.payroll-more { padding: 8px 16px 14px; }
+.payroll-checks { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 14px; }
+.payroll-sample { margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--color-border); background: var(--color-surface); font-size: 12px; overflow-x: auto; white-space: pre; }
+.payroll-share { border-top: 1px solid var(--color-border); padding-top: 16px; }
+
+.pay-lines caption { text-align: left; font-weight: 600; font-size: 14px; padding: 0 0 6px; color: var(--color-text); }
+.pay-lines th, .pay-lines td { padding: 8px 4px; }
+.pay-lines__total th, .pay-lines__total td { font-weight: 600; }
+.pay-net { display: flex; justify-content: space-between; align-items: baseline; margin: 0; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--color-border-strong); font-size: 15px; }
+.pay-net strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+
+.payroll-bar-cell { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; width: 100%; min-width: 90px; }
+.payroll-bar { display: inline-block; height: 8px; border-radius: 4px; background: var(--color-primary); opacity: 0.35; max-width: 70px; }
+
+@media (max-width: 640px) {
+  .payroll-toolbar__actions { margin-left: 0; width: 100%; }
+}
+
+/* Payslip templates: thumbnails, the gallery and the per-run picker. */
+.tpl-thumb { display: block; border: 1px solid var(--color-border); border-radius: 8px; background: #fff; object-fit: cover; object-position: top left; }
+.tpl-thumb--md { width: 168px; height: 109px; }
+.tpl-thumb--sm { width: 100%; aspect-ratio: 1278 / 827; height: auto; }
+.tpl-thumb--blank { display: grid; place-items: center; color: var(--color-text-muted); background: var(--color-surface); }
+.tpl-current { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.tpl-current p { margin: 4px 0 0; }
+.tpl-gallery { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.tpl-option { display: grid; grid-template-columns: 168px 1fr; gap: 6px 16px; padding: 12px; border: 1px solid var(--color-border); border-radius: 14px; }
+.tpl-option.is-default { border-color: var(--color-primary); }
+.tpl-option__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tpl-option__actions { grid-column: 2; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tpl-select { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tpl-select legend { font-size: 14px; font-weight: 600; padding: 0 0 6px; }
+.tpl-select__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.tpl-pick { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1px solid var(--color-border); border-radius: 10px; cursor: pointer; font-size: 13px; }
+.tpl-pick.is-on { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary); }
+.tpl-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.tpl-pick:focus-within { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.tpl-pick small { color: var(--color-text-muted); }
+.pay-lines th small { display: block; font-size: 12px; color: var(--color-text-muted); font-weight: 400; }
+
+@media (max-width: 640px) {
+  .tpl-option { grid-template-columns: 1fr; }
+  .tpl-option__actions { grid-column: 1; }
+  .tpl-thumb--md { width: 100%; height: auto; aspect-ratio: 1278 / 827; }
+}

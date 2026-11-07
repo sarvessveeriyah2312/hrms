@@ -86,6 +86,8 @@ export interface EmployeeSummary {
   department: string | null;
   manager: string | null;
   status: string;
+  jobTitle?: string | null;
+  hasPhoto?: boolean;
 }
 
 export interface CatalogAction {
@@ -647,6 +649,355 @@ export interface TimesheetDay {
   extraMin: number;
 }
 
+// ---------- employee profile ----------
+export type ProfileFieldType = 'TEXT' | 'EMAIL' | 'PHONE' | 'DATE' | 'YEAR' | 'SELECT';
+export interface ProfileField {
+  key: string;
+  type: ProfileFieldType;
+  /** Only required once anything in the section (or list entry) is filled in. */
+  required: boolean;
+  max: number;
+  options: string[];
+  /** Stored encrypted (ID, tax and bank account numbers). */
+  sensitive: boolean;
+}
+/** list: holds { items: [...] } up to maxItems. isPrivate: only the person and HR see it. */
+export interface ProfileSectionSpec {
+  key: string;
+  list: boolean;
+  maxItems: number;
+  isPrivate: boolean;
+  fields: ProfileField[];
+}
+/** Object sections: field → value. List sections: { items: [{ field → value }] }. */
+export type SectionData = Record<string, unknown>;
+export type EmploymentType = 'PERMANENT' | 'CONTRACT' | 'PART_TIME' | 'INTERN' | 'TEMPORARY';
+export interface JobDetails {
+  fullName: string;
+  joinDate: string;
+  jobTitle: string | null;
+  employmentType: EmploymentType | null;
+  confirmationDue: string | null;
+  confirmedOn: string | null;
+  resignedOn: string | null;
+  lastDay: string | null;
+}
+export type ChangeStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED';
+export interface ProfileChange {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  employeeNo: string;
+  section: string;
+  /** Field keys that differ; "items" for a list section that changed. */
+  changedFields: string[];
+  note: string | null;
+  status: ChangeStatus;
+  returnedComment: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  pendingWith: { level: number; totalSteps: number; label: string; approver: string } | null;
+  canCancel: boolean;
+  canEdit: boolean;
+}
+/** current: the section when it was sent; live: as it is now. */
+export interface ProfileChangeDetail {
+  change: ProfileChange;
+  current: SectionData;
+  proposed: SectionData;
+  live: SectionData;
+  timeline: TimelineStep[];
+}
+export interface EmployeeProfile {
+  id: string;
+  employeeNo: string;
+  email: string | null;
+  department: string | null;
+  manager: string | null;
+  entity: string;
+  country: string;
+  status: string;
+  job: JobDetails;
+  hasPhoto: boolean;
+  /** Only the sections you may see. */
+  sections: Record<string, SectionData>;
+  hiddenSections: string[];
+  access: { self: boolean; manage: boolean; seePrivate: boolean };
+  openChanges: ProfileChange[];
+}
+export type DocumentCategory = 'CONTRACT' | 'IDENTITY' | 'CERTIFICATE' | 'LETTER' | 'MEDICAL' | 'OTHER';
+export interface EmployeeDocument {
+  id: string;
+  employeeId: string;
+  category: DocumentCategory;
+  description: string | null;
+  file: FileMeta | null;
+  uploadedBy: string | null;
+  createdAt: string;
+  canDelete: boolean;
+}
+export type AssetKind = 'LAPTOP' | 'PHONE' | 'ACCESS_CARD' | 'VEHICLE' | 'UNIFORM' | 'OTHER';
+export interface EmployeeAsset {
+  id: string;
+  employeeId: string;
+  kind: AssetKind;
+  name: string;
+  tag: string | null;
+  issuedOn: string;
+  returnedOn: string | null;
+  note: string | null;
+}
+export type AssetInput = Omit<EmployeeAsset, 'id' | 'employeeId'>;
+
+// ---------- payroll ----------
+export type PayrollKind = 'PAYSLIP' | 'TAX_FORM';
+export type TaxFormCode = 'EA' | 'IR8A' | 'IR56B' | 'FORM16' | 'OTHER';
+/** period: "2026-10" for payslips, "2025" for tax forms. firstViewedAt: the employee's read receipt. */
+export interface PayrollDocument {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  employeeNo: string;
+  department: string | null;
+  kind: PayrollKind;
+  period: string;
+  formCode: TaxFormCode | null;
+  fileName: string | null;
+  sizeBytes: number;
+  source: 'UPLOAD' | 'GENERATED';
+  currency: string | null;
+  gross: number | null;
+  deductions: number | null;
+  net: number | null;
+  employerCost: number | null;
+  status: 'DRAFT' | 'PUBLISHED';
+  publishedAt: string | null;
+  firstViewedAt: string | null;
+  lastViewedAt: string | null;
+  viewCount: number;
+  createdAt: string;
+  /** The layout a generated payslip was drawn with. */
+  template: string | null;
+}
+export interface PayLine {
+  kind: 'EARNING' | 'DEDUCTION' | 'EMPLOYER';
+  /** Earnings only: basic pay, an allowance or overtime. */
+  category: 'BASIC' | 'ALLOWANCE' | 'OVERTIME' | null;
+  label: string;
+  amount: number;
+  /** Overtime hours (or basic days) and the rate, when given. */
+  quantity: number | null;
+  rate: number | null;
+}
+/** A payslip layout. preview: the design's image file name (shown as a thumbnail). */
+export interface PayslipTemplate {
+  code: string;
+  name: string;
+  description: string;
+  preview: string | null;
+}
+export interface PayrollPeriodSummary {
+  period: string;
+  formCode: TaxFormCode | null;
+  total: number;
+  drafts: number;
+  published: number;
+  read: number;
+}
+export interface PayrollPerson {
+  employeeId: string;
+  employeeNo: string;
+  employeeName: string;
+  department: string | null;
+}
+export interface PayrollPeriodView {
+  kind: PayrollKind;
+  period: string;
+  formCode: TaxFormCode | null;
+  documents: PayrollDocument[];
+  /** People employed during the period with no document for it. */
+  missing: PayrollPerson[];
+}
+export interface PayrollUploadResult {
+  saved: PayrollDocument[];
+  failed: { fileId: string | null; name: string | null; message: string }[];
+}
+export interface PayrollExportRow {
+  employeeId: string;
+  employeeNo: string;
+  employeeName: string;
+  department: string | null;
+  workingDays: number;
+  daysWorked: number;
+  hoursWorked: number;
+  lateCount: number;
+  lateMinutes: number;
+  earlyCount: number;
+  missedClockOuts: number;
+  absentDays: number;
+  leaveDays: number;
+  paidOvertimeHours: number;
+  weightedOvertimeHours: number;
+  timeOffOvertimeHours: number;
+  overtimeByRate: Record<string, number>;
+  claims: Record<string, number>;
+  claimsUnpaid: Record<string, number>;
+}
+export interface PayrollExportSummary {
+  month: string;
+  locked: boolean;
+  truncated: boolean;
+  waiting: { corrections: number; overtime: number; claims: number };
+  rates: string[];
+  currencies: string[];
+  rows: PayrollExportRow[];
+}
+export interface PayrollDashboardMonth {
+  month: string;
+  headcount: number;
+  joiners: number;
+  leavers: number;
+  /** Currency → gross pay plus employer contributions, from payslips that carry amounts. */
+  cost: Record<string, number>;
+  payslips: number;
+  claims: Record<string, number>;
+  overtimeHours: number;
+}
+export interface PayrollDashboard {
+  year: number;
+  headcountNow: number;
+  joiners: number;
+  leavers: number;
+  turnover: number | null;
+  months: PayrollDashboardMonth[];
+  departments: { name: string; headcount: number }[];
+  costThisYear: Record<string, number>;
+}
+
+// ---------- communication ----------
+export type NoticeKind = 'ANNOUNCEMENT' | 'MEMO' | 'POLICY';
+export type NoticeAudience = 'ALL' | 'DEPARTMENTS' | 'ENTITIES';
+export interface Notice {
+  id: string;
+  kind: NoticeKind;
+  title: string;
+  summary: string | null;
+  body: string;
+  audience: NoticeAudience;
+  audienceIds: string[];
+  audienceNames: string[];
+  attachments: FileMeta[];
+  pinned: boolean;
+  requiresAck: boolean;
+  version: number;
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  publishedAt: string | null;
+  publishedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Your own receipt for the current version. */
+  readAt: string | null;
+  acknowledgedAt: string | null;
+  /** For people who manage it (published ones). */
+  audienceSize: number | null;
+  readCount: number | null;
+  acknowledgedCount: number | null;
+}
+export interface NoticeInput {
+  kind: NoticeKind;
+  title: string;
+  summary?: string | null;
+  body: string;
+  audience: NoticeAudience;
+  audienceIds: string[];
+  attachmentIds: string[];
+  pinned: boolean;
+  requiresAck: boolean;
+}
+export interface NoticeReceipts {
+  noticeId: string;
+  version: number;
+  requiresAck: boolean;
+  people: { employeeId: string; employeeNo: string; name: string; department: string | null; readAt: string | null; acknowledgedAt: string | null }[];
+}
+export type LetterKind = 'OFFER' | 'CONFIRMATION' | 'INCREMENT' | 'PROMOTION' | 'EXPERIENCE' | 'WARNING' | 'OTHER';
+export interface Letterhead {
+  companyName: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  registrationNo: string | null;
+  logo: FileMeta | null;
+  signatoryName: string | null;
+  signatoryTitle: string | null;
+  footer: string | null;
+}
+export type LetterheadInput = Omit<Letterhead, 'logo'> & { logoFileId: string | null };
+/** fields: the placeholders typed in when issuing (the others come from the person's record). */
+export interface LetterTemplate {
+  id: string;
+  kind: LetterKind;
+  name: string;
+  subject: string;
+  body: string;
+  active: boolean;
+  fields: string[];
+  updatedAt: string;
+}
+export type LetterTemplateInput = Pick<LetterTemplate, 'kind' | 'name' | 'subject' | 'body' | 'active'>;
+export interface IssuedLetter {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  employeeNo: string;
+  kind: LetterKind;
+  subject: string;
+  fileName: string | null;
+  issuedBy: string | null;
+  issuedAt: string;
+  firstViewedAt: string | null;
+  withdrawnAt: string | null;
+}
+export type GrievanceCategory = 'WORKPLACE' | 'HARASSMENT' | 'PAY' | 'MANAGEMENT' | 'FACILITIES' | 'SUGGESTION' | 'OTHER';
+export type GrievanceStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export interface Grievance {
+  id: string;
+  category: GrievanceCategory;
+  subject: string;
+  anonymous: boolean;
+  status: GrievanceStatus;
+  /** "Anonymous" to handlers when the person chose that. */
+  raisedBy: string;
+  raisedByNo: string | null;
+  assignedTo: string | null;
+  assignedName: string | null;
+  createdAt: string;
+  updatedAt: string;
+  closedAt: string | null;
+  role: 'SUBMITTER' | 'HANDLER';
+  canReopen: boolean;
+  messages: number;
+}
+export interface GrievanceMessage {
+  id: string;
+  author: string;
+  authorRole: 'SUBMITTER' | 'HANDLER' | 'SYSTEM';
+  mine: boolean;
+  body: string;
+  file: FileMeta | null;
+  createdAt: string;
+}
+export interface GrievanceDetail {
+  grievance: Grievance;
+  messages: GrievanceMessage[];
+}
+export interface NotificationPreference {
+  kind: string;
+  email: boolean;
+  push: boolean;
+}
+
 // ---------- attendance corrections ----------
 
 export type CorrectionStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'RETURNED' | 'CANCELLED';
@@ -1083,10 +1434,63 @@ export function createApiClient(opts: ApiClientOptions) {
       claimPreview: (employeeId: string, claimTypeId: string, amount: number) =>
         request<ClaimApprovalPreview>('GET', `/claims/settings/approval-preview${query({ employeeId, claimTypeId, amount })}`),
     },
+    notices: {
+      mine: (kind?: NoticeKind) => request<Notice[]>('GET', `/notices${query({ kind })}`),
+      managed: (kind?: NoticeKind) => request<Notice[]>('GET', `/notices${query({ kind, manage: 'true' })}`),
+      counts: () => request<{ unread: number; toAcknowledge: number }>('GET', '/notices/counts'),
+      /** Opening one you're meant to read counts as read. */
+      open: (id: string) => request<Notice>('GET', `/notices/${id}`),
+      acknowledge: (id: string) => request<Notice>('POST', `/notices/${id}/acknowledge`),
+      attachment: (id: string, fileId: string) => request<Blob>('GET', `/notices/${id}/attachments/${fileId}`, { blob: true }),
+      create: (input: NoticeInput) => request<Notice>('POST', '/notices', { body: input }),
+      update: (id: string, input: NoticeInput) => request<Notice>('PUT', `/notices/${id}`, { body: input }),
+      publish: (id: string) => request<Notice>('POST', `/notices/${id}/publish`),
+      archive: (id: string) => request<void>('POST', `/notices/${id}/archive`),
+      remove: (id: string) => request<void>('DELETE', `/notices/${id}`),
+      receipts: (id: string) => request<NoticeReceipts>('GET', `/notices/${id}/receipts`),
+      audiences: () => request<{ departments: { id: string; name: string }[]; entities: { id: string; name: string }[] }>('GET', '/notices/audiences'),
+    },
+    letters: {
+      mine: () => request<IssuedLetter[]>('GET', '/letters/mine'),
+      file: (id: string) => request<Blob>('GET', `/letters/${id}/file`, { blob: true }),
+      all: () => request<IssuedLetter[]>('GET', '/letters'),
+      issue: (input: { templateId: string; employeeId: string; values: Record<string, string> }) =>
+        request<IssuedLetter>('POST', '/letters', { body: input }),
+      preview: (input: { templateId: string; employeeId: string; values: Record<string, string> }) =>
+        request<Blob>('POST', '/letters/preview', { body: input, blob: true }),
+      withdraw: (id: string) => request<void>('POST', `/letters/${id}/withdraw`),
+      letterhead: () => request<Letterhead>('GET', '/letters/letterhead'),
+      saveLetterhead: (input: LetterheadInput) => request<Letterhead>('PUT', '/letters/letterhead', { body: input }),
+      templates: () => request<LetterTemplate[]>('GET', '/letters/templates'),
+      autoFields: () => request<string[]>('GET', '/letters/templates/fields'),
+      createTemplate: (input: LetterTemplateInput) => request<LetterTemplate>('POST', '/letters/templates', { body: input }),
+      updateTemplate: (id: string, input: LetterTemplateInput) => request<LetterTemplate>('PUT', `/letters/templates/${id}`, { body: input }),
+      deleteTemplate: (id: string) => request<void>('DELETE', `/letters/templates/${id}`),
+    },
+    grievances: {
+      mine: () => request<Grievance[]>('GET', '/grievances/mine'),
+      submit: (input: { category: GrievanceCategory; subject: string; body: string; fileId?: string | null; anonymous: boolean }) =>
+        request<GrievanceDetail>('POST', '/grievances', { body: input }),
+      /** status: ACTIVE, OPEN, IN_PROGRESS, RESOLVED, CLOSED or ALL. */
+      all: (status = 'ACTIVE') => request<Grievance[]>('GET', `/grievances${query({ status })}`),
+      handlers: () => request<{ employeeId: string; name: string }[]>('GET', '/grievances/handlers'),
+      detail: (id: string) => request<GrievanceDetail>('GET', `/grievances/${id}`),
+      reply: (id: string, body: string, fileId?: string | null) =>
+        request<GrievanceDetail>('POST', `/grievances/${id}/replies`, { body: { body, fileId } }),
+      setStatus: (id: string, status: GrievanceStatus, note?: string) =>
+        request<GrievanceDetail>('POST', `/grievances/${id}/status`, { body: { status, note } }),
+      assign: (id: string, assignee: string | null) => request<GrievanceDetail>('POST', `/grievances/${id}/assign`, { body: { assignee } }),
+      close: (id: string) => request<GrievanceDetail>('POST', `/grievances/${id}/close`),
+      reopen: (id: string, reason: string) => request<GrievanceDetail>('POST', `/grievances/${id}/reopen`, { body: { reason } }),
+      file: (id: string, fileId: string) => request<Blob>('GET', `/grievances/${id}/files/${fileId}`, { blob: true }),
+    },
     notifications: {
       list: (limit = 30) => request<{ unread: number; items: AppNotification[] }>('GET', `/notifications?limit=${limit}`),
       read: (id: string) => request<void>('POST', `/notifications/${id}/read`),
       readAll: () => request<void>('POST', '/notifications/read-all'),
+      preferences: () => request<NotificationPreference[]>('GET', '/notifications/preferences'),
+      savePreferences: (prefs: NotificationPreference[]) =>
+        request<NotificationPreference[]>('PUT', '/notifications/preferences', { body: prefs }),
     },
     files: {
       /** PDF, JPG or PNG up to 5 MB. Returns the id to attach to a request. */
@@ -1098,6 +1502,69 @@ export function createApiClient(opts: ApiClientOptions) {
     },
     employees: (q?: string) =>
       request<{ scope: DataScope; employees: EmployeeSummary[] }>('GET', `/employees${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+    profiles: {
+      sections: () => request<ProfileSectionSpec[]>('GET', '/employees/profile-sections'),
+      /** id: an employee id or "me". */
+      get: (id: string) => request<EmployeeProfile>('GET', `/employees/${id}/profile`),
+      /** HR only: saves the section directly. */
+      saveSection: (id: string, section: string, data: SectionData) =>
+        request<EmployeeProfile>('PUT', `/employees/${id}/profile/${section}`, { body: data }),
+      saveJob: (id: string, job: JobDetails) => request<EmployeeProfile>('PUT', `/employees/${id}/job`, { body: job }),
+      photo: (id: string) => request<Blob>('GET', `/employees/${id}/photo`, { blob: true }),
+      setPhoto: (id: string, fileId: string) => request<void>('PUT', `/employees/${id}/photo`, { body: { fileId } }),
+      removePhoto: (id: string) => request<void>('DELETE', `/employees/${id}/photo`),
+      changes: {
+        mine: () => request<ProfileChange[]>('GET', '/employees/me/changes'),
+        ask: (section: string, data: SectionData, note?: string) =>
+          request<ProfileChange>('POST', '/employees/me/changes', { body: { section, data, note } }),
+        resubmit: (id: string, data: SectionData, note?: string) =>
+          request<ProfileChange>('PUT', `/employees/changes/${id}`, { body: { data, note } }),
+        cancel: (id: string) => request<void>('POST', `/employees/changes/${id}/cancel`),
+        detail: (id: string) => request<ProfileChangeDetail>('GET', `/employees/changes/${id}`),
+      },
+      documents: (id: string) => request<EmployeeDocument[]>('GET', `/employees/${id}/documents`),
+      addDocument: (id: string, input: { fileId: string; category: DocumentCategory; description?: string }) =>
+        request<EmployeeDocument>('POST', `/employees/${id}/documents`, { body: input }),
+      documentFile: (id: string, documentId: string) =>
+        request<Blob>('GET', `/employees/${id}/documents/${documentId}/file`, { blob: true }),
+      deleteDocument: (id: string, documentId: string) => request<void>('DELETE', `/employees/${id}/documents/${documentId}`),
+      assets: (id: string) => request<EmployeeAsset[]>('GET', `/employees/${id}/assets`),
+      addAsset: (id: string, input: AssetInput) => request<EmployeeAsset>('POST', `/employees/${id}/assets`, { body: input }),
+      updateAsset: (id: string, assetId: string, input: AssetInput) =>
+        request<EmployeeAsset>('PUT', `/employees/${id}/assets/${assetId}`, { body: input }),
+      deleteAsset: (id: string, assetId: string) => request<void>('DELETE', `/employees/${id}/assets/${assetId}`),
+    },
+    payroll: {
+      mine: () => request<PayrollDocument[]>('GET', '/payroll/me/documents'),
+      detail: (id: string) => request<{ doc: PayrollDocument; lines: PayLine[] }>('GET', `/payroll/documents/${id}`),
+      file: (id: string) => request<Blob>('GET', `/payroll/documents/${id}/file`, { blob: true }),
+      /** A copy that asks for this password to open. */
+      protectedCopy: (id: string, password: string) =>
+        request<Blob>('POST', `/payroll/documents/${id}/protected`, { body: { password }, blob: true }),
+      periods: (kind: PayrollKind, year?: number) => request<PayrollPeriodSummary[]>('GET', `/payroll/periods${query({ kind, year })}`),
+      period: (kind: PayrollKind, period: string, formCode?: string | null) =>
+        request<PayrollPeriodView>('GET', `/payroll/documents${query({ kind, period, formCode: formCode ?? undefined })}`),
+      taxForms: () => request<Record<string, TaxFormCode>>('GET', '/payroll/tax-forms'),
+      upload: (input: { kind: PayrollKind; period: string; formCode?: string | null; items: { fileId: string; employeeId?: string }[] }) =>
+        request<PayrollUploadResult>('POST', '/payroll/documents/upload', { body: input }),
+      /** template: a layout code; leave it out to use the company's default. */
+      generate: (period: string, csv: string, template?: string) =>
+        request<PayrollUploadResult>('POST', '/payroll/payslips/generate', { body: { period, csv, template } }),
+      /** Draws a month's generated payslips again in a template (same figures; published ones stay published). */
+      redraw: (period: string, template?: string, ids?: string[]) =>
+        request<PayrollUploadResult>('POST', '/payroll/payslips/redraw', { body: { period, template, ids } }),
+      templates: () => request<{ defaultTemplate: string; templates: PayslipTemplate[] }>('GET', '/payroll/templates'),
+      setDefaultTemplate: (template: string) =>
+        request<{ defaultTemplate: string; templates: PayslipTemplate[] }>('POST', '/payroll/templates/default', { body: { template } }),
+      templateSample: (code: string) => request<Blob>('GET', `/payroll/templates/${code}/sample`, { blob: true }),
+      publish: (input: { kind: PayrollKind; period: string; formCode?: string | null; ids?: string[] }) =>
+        request<{ published: number }>('POST', '/payroll/documents/publish', { body: input }),
+      unpublish: (id: string) => request<void>('POST', `/payroll/documents/${id}/unpublish`),
+      remove: (id: string) => request<void>('DELETE', `/payroll/documents/${id}`),
+      exportPreview: (month: string) => request<PayrollExportSummary>('GET', `/payroll/export${query({ month })}`),
+      exportCsv: (month: string) => request<Blob>('GET', `/payroll/export/csv${query({ month })}`, { blob: true }),
+      dashboard: (year: number) => request<PayrollDashboard>('GET', `/payroll/dashboard${query({ year })}`),
+    },
     approvals: {
       inbox: () => request<{ count: number; items: InboxItem[] }>('GET', '/approvals/inbox'),
       sendBack: (instanceId: string, comment: string) =>

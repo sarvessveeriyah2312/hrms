@@ -24,6 +24,12 @@ import { RostersPage } from '../features/attendance/RostersPage';
 import { AttendancePage } from '../features/attendance/AttendancePage';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage';
 import { ChangePasswordPage } from '../features/account/ChangePasswordPage';
+import { ProfilePage } from '../features/profile/ProfilePage';
+import { PayslipsPage } from '../features/payroll/PayslipsPage';
+import { PayrollPage } from '../features/payroll/PayrollPage';
+import { NewsPage } from '../features/comms/NewsPage';
+import { FeedbackPage } from '../features/comms/FeedbackPage';
+import { NotificationSettingsPage } from '../features/account/NotificationSettingsPage';
 
 export const router = createBrowserRouter([
   // Public site
@@ -42,8 +48,15 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <DashboardPage /> },
-          { path: 'approvals', element: <RequirePermission any={['attendance:approve', 'leave:approve', 'claims:approve']}><ApprovalsPage /></RequirePermission> },
+          { path: 'approvals', element: <RequirePermission any={['attendance:approve', 'leave:approve', 'claims:approve', 'employee:approve']}><ApprovalsPage /></RequirePermission> },
+          { path: 'profile', element: <ProfilePage /> },
+          { path: 'people/:id', element: <RequirePermission any={['employee:view']}><ProfilePage /></RequirePermission> },
+          { path: 'payslips', element: <RequirePermission module="payroll" any={['payroll:view']}><PayslipsPage /></RequirePermission> },
+          { path: 'payroll', element: <RequirePermission module="payroll" any={['payroll:manage', 'payroll:export', 'payroll:dashboard']}><PayrollPage /></RequirePermission> },
           { path: 'account/password', element: <ChangePasswordPage /> },
+          { path: 'account/notifications', element: <NotificationSettingsPage /> },
+          { path: 'news', element: <NewsPage /> },
+          { path: 'feedback', element: <FeedbackPage /> },
           { path: 'attendance/sites', element: <RequirePermission module="attendance" any={['attendance:manage']}><SitesPage /></RequirePermission> },
           { path: 'attendance/rosters', element: <RequirePermission module="attendance" any={['attendance:roster', 'attendance:manage']}><RostersPage /></RequirePermission> },
           { path: 'attendance/overtime-rules', element: <RequirePermission module="attendance" any={['attendance:manage']}><OvertimeRulesPage /></RequirePermission> },

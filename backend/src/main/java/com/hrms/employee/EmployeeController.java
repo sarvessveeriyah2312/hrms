@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 class EmployeeController {
 
     record EmployeeView(UUID id, String employeeNo, String fullName, String email, String department,
-                        String manager, String status) {
+                        String manager, String status, String jobTitle, boolean hasPhoto) {
     }
 
     record Directory(DataScope scope, List<EmployeeView> employees) {
@@ -46,7 +46,8 @@ class EmployeeController {
 
         List<EmployeeView> rows = jdbc.sql("""
                 select e.id, e.employee_no, e.full_name, u.email::text as email, d.name as department,
-                       m.full_name as manager, e.status
+                       m.full_name as manager, e.status,
+                       e.job_title, e.photo_file_id is not null as has_photo
                 from employee e
                 left join app_user u on u.id = e.user_id
                 left join department d on d.id = e.department_id

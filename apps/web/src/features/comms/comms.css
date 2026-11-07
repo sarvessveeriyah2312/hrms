@@ -1,0 +1,31 @@
+/* News, letters and feedback. */
+
+.notice-pin { vertical-align: -2px; margin-right: 6px; color: var(--color-primary); }
+.notice-summary { margin: 0; font-size: 15px; color: var(--color-text-secondary); }
+.notice-body { display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.6; color: var(--color-text); }
+.notice-body p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
+.notice-files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.notice-files .link-button { display: inline-flex; align-items: center; gap: 6px; }
+.notice-ack { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; padding: 14px; border: 1px solid var(--color-border-strong); border-radius: 12px; }
+.notice-ack p { margin: 0; }
+.notice-editor__body { min-height: 200px !important; }
+
+.comms-new { display: inline-flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.comms-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px 14px; font-size: 14px; }
+.comms-group { display: flex; align-items: center; gap: 8px; }
+.comms-templates { list-style: none; margin: 0; padding: 4px 16px 8px; display: flex; flex-direction: column; gap: 10px; }
+.comms-templates li { display: flex; flex-direction: column; gap: 2px; }
+.comms-templates small { color: var(--color-text-muted); font-size: 12px; }
+.comms-letterhead-link { padding: 4px 16px 16px; }
+.comms-placeholders p { margin: 0 0 6px; }
+.comms-placeholders code { display: inline-block; margin: 0 6px 6px 0; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--color-border); font-size: 12px; }
+
+.case-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0; }
+.case-thread { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.case-msg { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--color-border); max-width: 92%; }
+.case-msg--mine { align-self: flex-end; border-color: var(--color-primary); }
+.case-msg--system { align-self: center; border-style: dashed; font-size: 13px; color: var(--color-text-muted); }
+.case-msg__who { font-size: 12px; color: var(--color-text-muted); }
+.case-msg__body { white-space: pre-line; overflow-wrap: anywhere; font-size: 14px; }
+.case-msg .link-button { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.case-handle { border-top: 1px solid var(--color-border); padding-top: 16px; }

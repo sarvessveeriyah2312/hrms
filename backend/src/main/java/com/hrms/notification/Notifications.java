@@ -8,24 +8,28 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 
 /**
- * Sends in-app notifications. Call it inside the transaction of the action it describes, so a rolled-back
- * action leaves no notification behind. Recipients are employees; people without a login are skipped.
- * TODO(notification): email and push per the recipient's preferences.
+ * Sends in-app notifications, and the same by email and push per each recipient's preferences
+ * ({@link NotificationDelivery}). Call it inside the transaction of the action it describes, so a rolled-back action
+ * leaves no notification behind (email and push go out after commit). Recipients are employees; people without a login
+ * are skipped.
  */
 @Service
 public class Notifications {
 
     public enum Kind {
-        APPROVAL_WAITING, REQUEST_APPROVED, REQUEST_REJECTED, REQUEST_RETURNED, REQUEST_CANCELLED, LEAVE_RECORDED, CLAIM_PAID, SCHEDULE_PUBLISHED
+        APPROVAL_WAITING, REQUEST_APPROVED, REQUEST_REJECTED, REQUEST_RETURNED, REQUEST_CANCELLED, LEAVE_RECORDED, CLAIM_PAID, SCHEDULE_PUBLISHED, PAYSLIP_PUBLISHED, TAX_FORM_PUBLISHED,
+        APPROVAL_OVERDUE, APPROVAL_BACKUP, ANNOUNCEMENT, POLICY_PUBLISHED, LETTER_ISSUED, GRIEVANCE_UPDATE
     }
 
     public record Message(Kind kind, String title, String body, String link, String tone) {
     }
 
     private final JdbcClient jdbc;
+    private final NotificationDelivery delivery;
 
-    Notifications(JdbcClient jdbc) {
+    Notifications(JdbcClient jdbc, NotificationDelivery delivery) {
         this.jdbc = jdbc;
+        this.delivery = delivery;
     }
 
     public void toEmployee(UUID employeeId, Message m) {
@@ -43,6 +47,7 @@ public class Notifications {
             .param("kind", m.kind().name()).param("title", m.title()).param("body", m.body())
             .param("link", m.link()).param("tone", m.tone() == null ? "blue" : m.tone()).param("ids", ids)
             .update();
+        delivery.deliver(ids, m);
     }
 
     /** Everyone whose roles give this permission at company-wide scope (e.g. HR approvers), minus some people. */

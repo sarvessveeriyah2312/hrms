@@ -33,7 +33,8 @@ class DatabaseFileStore implements FileStore {
         this.jdbc = jdbc;
     }
 
-    FileMeta store(UUID owner, String originalName, byte[] data) {
+    @Override
+    public FileMeta store(UUID owner, String originalName, byte[] data) {
         if (data.length == 0) throw new ApiException(HttpStatus.BAD_REQUEST, "FILE_EMPTY", "That file is empty.");
         if (data.length > MAX_BYTES) throw new ApiException(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_TOO_LARGE", "Files can be up to 5 MB.");
         String type = detect(data).orElseThrow(() -> new ApiException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "FILE_TYPE",

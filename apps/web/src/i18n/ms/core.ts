@@ -41,6 +41,8 @@ export const core: Shape<typeof en> = {
     dashboard: 'Papan pemuka', people: 'Kakitangan', attendance: 'Kehadiran', leave: 'Cuti', claims: 'Tuntutan', approvals: 'Kelulusan',
     reports: 'Laporan', settings: 'Tetapan', admin: 'Pentadbiran', users: 'Pengguna', roles: 'Peranan dan kebenaran', company: 'Syarikat',
     sites: 'Tapak', rosters: 'Jadual tugas', overtimeRules: 'Peraturan lebih masa', leaveSettings: 'Tetapan cuti', claimSettings: 'Tetapan tuntutan', workflows: 'Aliran kelulusan',
+    profile: 'Profil saya', payslips: 'Slip gaji', payroll: 'Gaji',
+    news: 'Berita', feedback: 'Maklum balas',
   },
   site: {
     login: 'Log masuk', getStarted: 'Mulakan', navLabel: 'Laman', footerLabel: 'Kaki laman', privacy: 'Privasi',
@@ -65,6 +67,8 @@ export const core: Shape<typeof en> = {
   },
   module: {
     attendance: 'Kehadiran', leave: 'Cuti', claims: 'Tuntutan', employee: 'Kakitangan', reports: 'Laporan', workflow: 'Aliran kelulusan', admin: 'Pentadbiran',
+    payroll: 'Gaji',
+    comms: 'Komunikasi',
   },
   dates: {
     morning: 'pagi', afternoon: 'petang', withPart: '{{date}} ({{part}})',

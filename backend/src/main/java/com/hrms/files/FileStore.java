@@ -16,6 +16,9 @@ public interface FileStore {
     record StoredFile(FileMeta meta, byte[] data) {
     }
 
+    /** Stores a PDF, JPG or PNG (checked by content, up to 5 MB) owned by that user, e.g. a generated payslip. */
+    FileMeta store(UUID ownerUserId, String name, byte[] data);
+
     Optional<FileMeta> meta(UUID id);
 
     Optional<StoredFile> read(UUID id);

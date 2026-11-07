@@ -78,8 +78,21 @@ export const admin = {
       manage: { name: 'Manage claim policies', description: 'Claim types and limits.' },
     },
     employee: {
-      view: { name: 'See employee records', description: 'See names, departments and managers.' },
-      manage: { name: 'Edit employee records', description: 'Change job and personal details.' },
+      view: { name: 'See employee records', description: 'See names, departments, managers, job details, contact details and emergency contacts.' },
+      manage: { name: 'Edit employee records', description: 'Change job and personal details, documents and assets; see private details (address, bank, family).' },
+      approve: { name: 'Approve profile changes', description: 'Act on the changes people ask for to their own profile.' },
+    },
+    payroll: {
+      view: { name: 'See their payslips', description: 'Open their own payslips and tax forms.' },
+      manage: { name: 'Manage payslips and tax forms', description: 'Upload or generate payslips and tax forms, publish them and see who has read them.' },
+      export: { name: 'Export payroll data', description: 'Download a pay period’s attendance, overtime and approved claims as CSV.' },
+      dashboard: { name: 'See the payroll dashboard', description: 'Head count, joiners and leavers, and payroll cost by month.' },
+    },
+    comms: {
+      post: { name: 'Post announcements and memos', description: 'Write, publish and archive announcements and HR memos, and see who has read them.' },
+      policies: { name: 'Manage company policies', description: 'Publish policies and new versions, and see who hasn’t acknowledged them.' },
+      letters: { name: 'Issue letters', description: 'Letter templates, the company letterhead, and letters issued to people.' },
+      grievances: { name: 'Handle grievances', description: 'See and answer grievances and feedback, assign them and change their status.' },
     },
     reports: {
       leave: { name: 'See leave reports', description: 'Leave balances and days taken.' },

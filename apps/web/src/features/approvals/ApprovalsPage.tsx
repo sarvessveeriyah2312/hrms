@@ -19,6 +19,7 @@ import { Timeline } from './Timeline';
 import { AttachmentButton } from '../../components/app/files';
 import { useInbox } from './useInbox';
 import { ClaimFacts } from '../claims/ClaimsPage';
+import { ChangeCompare } from '../profile/ChangeCompare';
 
 
 /** Approvals inbox: requests waiting for you, and (for company-wide approvers) ones you may step in on. */
@@ -106,6 +107,7 @@ async function refreshAfterDeciding(queryClient: QueryClient) {
   await queryClient.invalidateQueries({ queryKey: ['leave'] });
   await queryClient.invalidateQueries({ queryKey: ['claims'] });
   await queryClient.invalidateQueries({ queryKey: ['attendance'] });
+  await queryClient.invalidateQueries({ queryKey: ['profile'] });
 }
 
 /** Approve the chosen overtime requests with one optional comment; lists any that couldn't be approved. */
@@ -262,6 +264,11 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
     queryFn: () => api.attendance.shiftRequests.detail(item.subjectId),
     enabled: item.subjectType === 'SHIFT_CHANGE',
   });
+  const profileChange = useQuery({
+    queryKey: ['profile', 'change', item.subjectId],
+    queryFn: () => api.profiles.changes.detail(item.subjectId),
+    enabled: item.subjectType === 'PROFILE_CHANGE',
+  });
   const overtime = useQuery({
     queryKey: ['attendance', 'overtime', item.subjectId],
     queryFn: () => api.attendance.overtime.detail(item.subjectId),
@@ -270,8 +277,8 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
   const [comment, setComment] = useState('');
   const decide = useDecide(onClose);
   const r = detail.data?.request;
-  const timeline = detail.data?.timeline ?? claim.data?.timeline ?? correction.data?.timeline ?? overtime.data?.timeline ?? shiftChange.data?.timeline;
-  const loadError = detail.error ?? claim.error ?? correction.error ?? overtime.error ?? shiftChange.error;
+  const timeline = detail.data?.timeline ?? claim.data?.timeline ?? correction.data?.timeline ?? overtime.data?.timeline ?? shiftChange.data?.timeline ?? profileChange.data?.timeline;
+  const loadError = detail.error ?? claim.error ?? correction.error ?? overtime.error ?? shiftChange.error ?? profileChange.error;
   const b = balance.data?.find((x) => x.leaveTypeId === r?.leaveTypeId);
 
   return (
@@ -281,6 +288,7 @@ function RequestPanel({ item, onClose }: { item: InboxItem; onClose: () => void 
       {correction.data && <CorrectionFacts detail={correction.data} showEmployee />}
       {overtime.data && <OvertimeFacts detail={overtime.data} showEmployee />}
       {shiftChange.data && <ShiftChangeFacts request={shiftChange.data.request} />}
+      {profileChange.data && <ChangeCompare detail={profileChange.data} showEmployee />}
       {r && (
         <dl className="facts">
           <dt>{t('req.employee')}</dt><dd>{r.employeeName} ({item.requesterNo})</dd>

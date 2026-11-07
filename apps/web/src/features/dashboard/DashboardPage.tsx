@@ -21,7 +21,7 @@ export function DashboardPage() {
   const [now] = useState(() => new Date());
   const today = isoDate(now);
   const leaveOn = hasModule(user, 'leave');
-  const approver = canAny(user, ['attendance:approve', 'leave:approve', 'claims:approve']);
+  const approver = canAny(user, ['attendance:approve', 'leave:approve', 'claims:approve', 'employee:approve']);
   const canSeePeople = can(user, 'employee:view');
   const seesTeamLeave = leaveOn && can(user, 'leave:view', 'TEAM');
   const hasLeave = leaveOn && can(user, 'leave:apply') && !!user?.employeeId;
@@ -38,7 +38,7 @@ export function DashboardPage() {
   const annual = balances.data?.find((b) => b.trackBalance);
   const myPending = (mine.data ?? []).filter((r) => r.status === 'PENDING');
   const others = (people.data?.employees ?? []).filter((e) => e.id !== user?.employeeId);
-  const licensable = ['attendance', 'leave', 'claims', 'reports'];
+  const licensable = ['attendance', 'leave', 'claims', 'reports', 'payroll'];
 
   const subtitle = approver && waiting.length > 0
     ? t('dashboard.needOk', { count: waiting.length })
@@ -117,7 +117,7 @@ export function DashboardPage() {
                 {others.slice(0, 5).map((e) => (
                   <Row key={e.id} lead={<Avatar name={e.fullName} />} title={e.fullName}
                     meta={[e.employeeNo, e.department, e.manager && t('dashboard.reportsTo', { name: e.manager })].filter(Boolean).join(' · ')}
-                    to={`/app/people?q=${encodeURIComponent(e.fullName)}`} />
+                    to={`/app/people/${e.id}`} />
                 ))}
                 {people.data && others.length === 0 && <Row title={t('dashboard.noOne')} meta={t('dashboard.noOneMeta')} />}
               </List>

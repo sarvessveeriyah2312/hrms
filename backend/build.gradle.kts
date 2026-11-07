@@ -34,6 +34,7 @@ dependencies {
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0")
 	implementation("com.google.firebase:firebase-admin:9.9.0")
 	implementation("org.bouncycastle:bcprov-jdk18on:1.80") // Argon2 password hashing
+	implementation("org.apache.pdfbox:pdfbox:3.0.5") // payslip PDFs and password-protected copies
 	implementation("org.springframework.modulith:spring-modulith-observability-api")
 	implementation("org.springframework.modulith:spring-modulith-starter-core")
 	implementation("org.springframework.modulith:spring-modulith-starter-jpa")

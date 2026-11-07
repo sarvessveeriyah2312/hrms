@@ -454,14 +454,19 @@ public class WorkflowService {
         ApprovalSubject.Summary summary = subject(in.subjectType()).summarize(in.subjectId());
         String requester = jdbc.sql("select full_name from employee where id = :id").param("id", in.requesterId())
             .query(String.class).optional().orElse("Someone");
-        Set<UUID> recipients = "HR".equals(step.pool())
-            ? notifications.employeesWithCompanyWide(in.module() + ":approve", Set.of(in.requesterId()))
-            : "ROLE".equals(step.pool()) && step.poolRoleId() != null ? roleMembers(step.poolRoleId(), in.requesterId())
-            : step.assigneeId() == null ? Set.of() : Set.of(step.assigneeId());
+        Set<UUID> recipients = waitingRecipients(in, step);
         notifications.toEmployees(recipients, new Notifications.Message(Notifications.Kind.APPROVAL_WAITING,
             requester + " asked for " + lowerFirst(summary.title()),
             summary.detail() + ("HR".equals(step.pool()) ? " · HR approval" : ""),
             "/app/approvals?open=" + instanceId, summary.tone()));
+    }
+
+    /** Who a step is waiting for: its approver, everyone with its role, or every company-wide approver for an HR step. */
+    Set<UUID> waitingRecipients(Instance in, Step step) {
+        return "HR".equals(step.pool())
+            ? notifications.employeesWithCompanyWide(in.module() + ":approve", Set.of(in.requesterId()))
+            : "ROLE".equals(step.pool()) && step.poolRoleId() != null ? roleMembers(step.poolRoleId(), in.requesterId())
+            : step.assigneeId() == null ? Set.of() : Set.of(step.assigneeId());
     }
 
     /** Tells the requester the outcome (not when they withdrew it themselves). */
